@@ -47,10 +47,30 @@ export async function submitCampaign(campaignId, userId) {
   return campaign;
 }
 
+// Statuses where the campaign is paused/closed by a moderator or by
+// completion — editing is blocked outright regardless of who's asking.
+const NOT_EDITABLE_STATUSES = ['suspended', 'frozen', 'cancelled', 'expired', 'completed'];
+
+// Editing a campaign that's already been reviewed (submitted and beyond)
+// sends it back through moderation, since the reviewed content just changed —
+// see EDIT_RETURNS_TO_REVIEW below and updateCampaign in campaignController.
+export const EDIT_RETURNS_TO_REVIEW_STATUSES = [
+  'submitted',
+  'under_review',
+  'approved',
+  'published',
+  'active',
+  'goal_reached',
+  'withdrawal',
+];
+
 // Co-organizers can edit campaign content but only the organizer can submit,
-// request withdrawals, or manage the team (spec Section 33).
+// request withdrawals, or manage the team (spec Section 33). The organizer
+// (and accepted co-organizers) can edit at any non-paused/closed status —
+// editing a live campaign just sends it back to under_review rather than
+// being blocked outright.
 export async function canEditCampaign(campaign, userId) {
-  if (!['draft', 'rejected'].includes(campaign.status)) return false;
+  if (NOT_EDITABLE_STATUSES.includes(campaign.status)) return false;
   if (String(campaign.organizerId) === String(userId)) return true;
 
   const isAcceptedCoOrganizer = await CampaignMember.exists({

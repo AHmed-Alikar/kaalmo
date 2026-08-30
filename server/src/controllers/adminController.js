@@ -11,6 +11,7 @@ import { adminReviewCampaign, recomputeRaisedAmount } from '../services/campaign
 import { toPublicUser } from '../services/authService.js';
 import { logAudit } from '../services/auditLogService.js';
 import { notifyUser } from '../services/notificationService.js';
+import { computeFraudSignals } from '../services/fraudService.js';
 
 // Unlike the public listing, admins can see campaigns in any status
 // (draft, under_review, suspended, etc.) so review queues have full visibility.
@@ -275,4 +276,9 @@ export const listAuditLogs = asyncHandler(async (req, res) => {
     AuditLog.countDocuments(),
   ]);
   res.json({ items, total, page: Number(page), limit: Number(limit) });
+});
+
+export const listFraudSignals = asyncHandler(async (req, res) => {
+  const signals = await computeFraudSignals();
+  res.json({ items: signals });
 });

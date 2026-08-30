@@ -4,16 +4,18 @@ import PageLayout from '../../components/PageLayout';
 import WizardSteps from '../../components/WizardSteps';
 import Button from '../../components/Button';
 import api from '../../api/client';
-
-const STEPS = ['Basics', 'Story', 'Review & Submit'];
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function CreateCampaignStory() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const campaignId = searchParams.get('id');
   const [story, setStory] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const STEPS = [t('wizard.basics'), t('wizard.story'), t('wizard.reviewSubmit')];
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,7 +25,7 @@ export default function CreateCampaignStory() {
       await api.patch(`/campaigns/${campaignId}`, { story: { so: story } });
       navigate(`/organizer/new/review?id=${campaignId}`);
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Could not save your story. Please try again.');
+      setError(err.response?.data?.error?.message || t('createStory.error'));
     } finally {
       setSubmitting(false);
     }
@@ -33,7 +35,7 @@ export default function CreateCampaignStory() {
     return (
       <PageLayout noFooter>
         <div className="max-w-[560px] mx-auto px-xl py-3xl">
-          <p className="text-[14px] text-error">Missing campaign. Please start from the basics step.</p>
+          <p className="text-[14px] text-error">{t('createStory.missingCampaign')}</p>
         </div>
       </PageLayout>
     );
@@ -43,9 +45,9 @@ export default function CreateCampaignStory() {
     <PageLayout noFooter>
       <div className="max-w-[560px] mx-auto px-xl py-3xl">
         <WizardSteps steps={STEPS} current={2} />
-        <h1 className="text-[24px] font-bold text-text-primary mb-xs">Tell the full story</h1>
+        <h1 className="text-[24px] font-bold text-text-primary mb-xs">{t('createStory.title')}</h1>
         <p className="text-[14px] text-text-secondary mb-2xl">
-          Explain who needs help, why, and how the money will be used. Donors trust specific, honest stories.
+          {t('createStory.subtitle')}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
@@ -55,7 +57,7 @@ export default function CreateCampaignStory() {
             minLength={20}
             value={story}
             onChange={(e) => setStory(e.target.value)}
-            placeholder="Start with who this is for and why the funds are needed..."
+            placeholder={t('createStory.placeholder')}
             className="w-full px-lg py-md rounded border border-border bg-surface text-text-primary outline-none focus:border-2 focus:border-primary transition-colors"
           />
 
@@ -63,7 +65,7 @@ export default function CreateCampaignStory() {
 
           <div className="flex justify-end pt-md">
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Saving…' : 'Continue to review'}
+              {submitting ? t('common.saving') : t('createStory.continueToReview')}
             </Button>
           </div>
         </form>

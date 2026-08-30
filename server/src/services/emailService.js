@@ -34,13 +34,20 @@ export async function sendVerificationEmail(user, code) {
   });
 }
 
-export async function sendTeamInviteEmail({ inviteEmail, inviterName, campaignTitle }) {
+// Routes a non-user to register (email prefilled) and an existing user to
+// log in — both land back on /organizer/invites afterward to accept.
+export async function sendTeamInviteEmail({ inviteEmail, inviterName, campaignTitle, hasAccount }) {
   const clientOrigin = (process.env.CLIENT_ORIGIN || '').split(',')[0];
-  const link = `${clientOrigin}/organizer/invites`;
+  const redirect = encodeURIComponent('/organizer/invites');
+  const link = hasAccount
+    ? `${clientOrigin}/login?redirect=${redirect}`
+    : `${clientOrigin}/register?email=${encodeURIComponent(inviteEmail)}&redirect=${redirect}`;
+  const cta = hasAccount ? 'Gal si aad u aqbasho' : 'Iska diiwaan geli si aad u aqbasho';
+
   return sendEmail({
     to: inviteEmail,
     subject: `${inviterName} ku casuumay inaad ka caawiso "${campaignTitle}" — Kaalmo`,
-    html: `<p>Salaan,</p><p>${inviterName} wuxuu ku casuumay inaad co-organizer ka noqoto campaign-ka "${campaignTitle}" ee Kaalmo.</p><p>Fadlan <a href="${link}">gal Kaalmo</a> si aad u aragto casuumaadda oo aad u aqbasho.</p>`,
+    html: `<p>Salaan,</p><p>${inviterName} wuxuu ku casuumay inaad co-organizer ka noqoto campaign-ka "${campaignTitle}" ee Kaalmo.</p><p>Fadlan <a href="${link}">${cta}</a> si aad u aragto casuumaadda oo aad u aqbasho.</p>`,
   });
 }
 

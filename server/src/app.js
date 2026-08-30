@@ -16,6 +16,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import campaignInviteRoutes from './routes/campaignInviteRoutes.js';
+import supportTicketRoutes from './routes/supportTicketRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { UPLOAD_DIR } from './middleware/upload.js';
 
@@ -50,6 +51,7 @@ app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/campaign-invites', campaignInviteRoutes);
+app.use('/api/v1/support-tickets', supportTicketRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

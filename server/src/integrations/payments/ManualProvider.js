@@ -38,6 +38,14 @@ export const manualProvider = {
     return { payment, transaction };
   },
 
+  // Unified entry point used by donationController — creates the intent and
+  // immediately auto-confirms it (no real money movement to wait on).
+  async charge(params) {
+    const intent = await this.createPaymentIntent(params);
+    const { transaction } = await this.confirmPayment({ paymentId: intent.paymentId });
+    return { paymentId: intent.paymentId, status: 'confirmed', transaction };
+  },
+
   async handleWebhook() {
     // Manual provider has no webhooks — confirmation happens via admin action.
     return { handled: false };

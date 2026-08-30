@@ -40,6 +40,7 @@ export const inviteMember = asyncHandler(async (req, res) => {
     inviteEmail,
     inviterName: inviter.fullName,
     campaignTitle: campaign.title?.en || campaign.title?.so,
+    hasAccount: !!invitee,
   });
 
   if (invitee) {
@@ -86,12 +87,19 @@ export const listMyInvites = asyncHandler(async (req, res) => {
   res.json(invites);
 });
 
+// Accepting a co-organizer invite grants access to this one campaign only —
+// it must NEVER change the user's global account role. A co-organizer is a
+// campaign-scoped collaborator (CampaignMember.status === 'accepted'), not a
+// global "organizer". Authorization elsewhere (canEditCampaign,
+// isCampaignContributor) already checks this membership directly and never
+// looks at user.roles for co-organizer access, so no role/token change is
+// needed here for permissions to take effect.
 export const acceptInvite = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
   const member = await CampaignMember.findOne({ _id: req.params.memberId, inviteEmail: user.email });
   if (!member) throw new ApiError(404, 'NOT_FOUND', 'Invitation not found');
   if (member.status === 'accepted') {
-    return res.json(member);
+    return res.json({ member });
   }
 
   member.status = 'accepted';
@@ -99,5 +107,5 @@ export const acceptInvite = asyncHandler(async (req, res) => {
   member.acceptedAt = new Date();
   await member.save();
 
-  res.json(member);
+  res.json({ member });
 });

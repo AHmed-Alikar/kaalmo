@@ -4,9 +4,11 @@ import StatusPill from '../../components/StatusPill';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 import { ADMIN_NAV } from './nav';
 
 const STATUSES = ['pending', 'confirmed', 'failed', 'refunded'];
+const STATUS_LABELS_SO = { pending: 'Sugaya', confirmed: 'La xaqiijiyay', failed: 'Fashilmay', refunded: 'Dib loo celiyay' };
 
 // This is where the manual/admin-recorded payment provider actually gets
 // used (spec Section 14) — an admin checks that money genuinely arrived
@@ -19,7 +21,8 @@ const STATUSES = ['pending', 'confirmed', 'failed', 'refunded'];
 // reconciling a set of transfers at once (e.g. against a mobile money
 // statement), without a modal per donation.
 export default function AdminDonations() {
-  const [status, setStatus] = useState('pending');
+  const { t, language } = useLanguage();
+  const [status, setStatus] = useState('confirmed');
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
@@ -69,7 +72,7 @@ export default function AdminDonations() {
       setReference('');
       load();
     } catch (err) {
-      setActionError(err.response?.data?.error?.message || 'Could not confirm this payment.');
+      setActionError(err.response?.data?.error?.message || t('adminDonations.confirmSingleError'));
     } finally {
       setSubmitting(false);
     }
@@ -86,17 +89,21 @@ export default function AdminDonations() {
       setBatchResult(data);
       load();
     } catch (err) {
-      setActionError(err.response?.data?.error?.message || 'Could not confirm these payments.');
+      setActionError(err.response?.data?.error?.message || t('adminDonations.confirmBatchError'));
     } finally {
       setSubmitting(false);
     }
   }
 
+  function statusLabel(s) {
+    return language === 'so' ? STATUS_LABELS_SO[s] : s;
+  }
+
   return (
-    <DashboardLayout title="Admin" nav={ADMIN_NAV}>
+    <DashboardLayout title={t('adminNav.overview')} nav={ADMIN_NAV}>
       <div className="flex flex-col gap-xl">
         <div className="flex items-center justify-between flex-wrap gap-md">
-          <h1 className="text-[24px] font-bold text-text-primary">Donations</h1>
+          <h1 className="text-[24px] font-bold text-text-primary">{t('adminNav.donations')}</h1>
           <div className="flex gap-xs flex-wrap">
             {STATUSES.map((s) => (
               <button
@@ -106,7 +113,7 @@ export default function AdminDonations() {
                   status === s ? 'bg-primary/10 text-primary border-primary' : 'border-border text-text-secondary hover:border-primary/40'
                 }`}
               >
-                {s}
+                {statusLabel(s)}
               </button>
             ))}
           </div>
@@ -114,11 +121,11 @@ export default function AdminDonations() {
 
         {selected.size > 0 && (
           <div className="flex items-center justify-between bg-primary/5 border border-primary/30 rounded-lg px-lg py-md">
-            <span className="text-[14px] text-text-primary">{selected.size} selected</span>
+            <span className="text-[14px] text-text-primary">{selected.size} {t('adminDonations.selected')}</span>
             <div className="flex gap-sm">
-              <Button variant="tertiary" onClick={() => setSelected(new Set())}>Clear</Button>
+              <Button variant="tertiary" onClick={() => setSelected(new Set())}>{t('adminDonations.clear')}</Button>
               <Button onClick={() => { setConfirmTarget('batch'); setActionError(null); setBatchResult(null); }}>
-                Confirm {selected.size} selected
+                {t('adminDonations.confirmSelectedPrefix')} {selected.size} {t('adminDonations.selected')}
               </Button>
             </div>
           </div>
@@ -129,12 +136,8 @@ export default function AdminDonations() {
         ) : donations.length === 0 ? (
           <EmptyState
             icon="volunteer_activism"
-            title={status === 'pending' ? 'Nothing awaiting confirmation' : `No ${status} donations`}
-            description={
-              status === 'pending'
-                ? 'Donations made through the manual payment method will appear here for you to confirm once the money arrives.'
-                : undefined
-            }
+            title={status === 'pending' ? t('adminDonations.nothingAwaitingTitle') : `${t('adminSupport.noTicketsPrefix')} ${statusLabel(status)} ${t('adminNav.donations').toLowerCase()}`}
+            description={status === 'pending' ? t('adminDonations.nothingAwaitingDesc') : undefined}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -151,13 +154,13 @@ export default function AdminDonations() {
                       />
                     )}
                   </th>
-                  <th className="py-sm pr-md">Date</th>
-                  <th className="py-sm pr-md">Campaign</th>
-                  <th className="py-sm pr-md">Donor</th>
-                  <th className="py-sm pr-md">Amount</th>
-                  <th className="py-sm pr-md">Method</th>
-                  <th className="py-sm pr-md">Status</th>
-                  <th className="py-sm pr-md">Action</th>
+                  <th className="py-sm pr-md">{t('adminDonations.date')}</th>
+                  <th className="py-sm pr-md">{t('team.campaignLabel')}</th>
+                  <th className="py-sm pr-md">{t('adminDonations.donor')}</th>
+                  <th className="py-sm pr-md">{t('donate.amountLabel').split(' ')[0]}</th>
+                  <th className="py-sm pr-md">{t('adminDonations.method')}</th>
+                  <th className="py-sm pr-md">{t('donationConfirmed.status')}</th>
+                  <th className="py-sm pr-md">{t('userManagement.actions').replace(/s$/, '')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -176,9 +179,9 @@ export default function AdminDonations() {
                         )}
                       </td>
                       <td className="py-md pr-md text-text-secondary whitespace-nowrap">{new Date(d.createdAt).toLocaleString()}</td>
-                      <td className="py-md pr-md text-text-primary">{d.campaignId?.title?.en || d.campaignId?.title?.so || '—'}</td>
+                      <td className="py-md pr-md text-text-primary">{d.campaignId?.title?.[language] || d.campaignId?.title?.so || d.campaignId?.title?.en || '—'}</td>
                       <td className="py-md pr-md text-text-secondary">
-                        {d.isAnonymous ? 'Anonymous' : d.donorId?.fullName || d.donorId?.email || 'Guest'}
+                        {d.isAnonymous ? t('campaign.anonymous') : d.donorId?.fullName || d.donorId?.email || t('adminDonations.guest')}
                       </td>
                       <td className="py-md pr-md text-text-primary font-semibold">${d.amount.toLocaleString()} {d.currency}</td>
                       <td className="py-md pr-md text-text-secondary capitalize">{d.paymentId?.provider || '—'}</td>
@@ -190,7 +193,7 @@ export default function AdminDonations() {
                             className="h-[32px] px-md text-[12px]"
                             onClick={() => { setConfirmTarget(d); setReference(''); setActionError(null); }}
                           >
-                            Confirm
+                            {t('adminDonations.confirm')}
                           </Button>
                         )}
                       </td>
@@ -208,10 +211,10 @@ export default function AdminDonations() {
           <div className="bg-surface rounded-lg border border-border p-xl max-w-md w-full flex flex-col gap-lg">
             {batchResult ? (
               <>
-                <h3 className="text-[16px] font-semibold text-text-primary">Batch confirmation complete</h3>
+                <h3 className="text-[16px] font-semibold text-text-primary">{t('adminDonations.batchCompleteTitle')}</h3>
                 <p className="text-[14px] text-text-primary">
-                  ✓ {batchResult.confirmedCount} confirmed
-                  {batchResult.failedCount > 0 && <span className="text-error"> · {batchResult.failedCount} failed</span>}
+                  ✓ {batchResult.confirmedCount} {t('adminDonations.confirmedSuffix')}
+                  {batchResult.failedCount > 0 && <span className="text-error"> · {batchResult.failedCount} {t('adminDonations.failedSuffix')}</span>}
                 </p>
                 {batchResult.failedCount > 0 && (
                   <div className="bg-error/10 border border-error/30 rounded p-md text-[13px] text-error max-h-40 overflow-y-auto">
@@ -220,20 +223,19 @@ export default function AdminDonations() {
                     ))}
                   </div>
                 )}
-                <Button onClick={() => { setConfirmTarget(null); setBatchResult(null); }}>Done</Button>
+                <Button onClick={() => { setConfirmTarget(null); setBatchResult(null); }}>{t('adminDonations.done')}</Button>
               </>
             ) : (
               <>
-                <h3 className="text-[16px] font-semibold text-text-primary">Confirm {selected.size} donations?</h3>
+                <h3 className="text-[16px] font-semibold text-text-primary">{t('adminDonations.confirmNPrefix')} {selected.size} {t('adminDonations.confirmNSuffix')}</h3>
                 <p className="text-[13px] text-text-secondary">
-                  Only confirm after verifying each transfer genuinely arrived (e.g. against a mobile money
-                  statement). This updates the raised amount on every affected campaign immediately.
+                  {t('adminDonations.batchConfirmNote')}
                 </p>
                 {actionError && <p className="text-[13px] text-error">{actionError}</p>}
                 <div className="flex justify-end gap-md">
-                  <Button variant="tertiary" onClick={() => setConfirmTarget(null)}>Cancel</Button>
+                  <Button variant="tertiary" onClick={() => setConfirmTarget(null)}>{t('campaign.cancel')}</Button>
                   <Button onClick={handleConfirmBatch} disabled={submitting}>
-                    {submitting ? 'Confirming…' : `Confirm ${selected.size} donations`}
+                    {submitting ? t('adminDonations.confirming') : `${t('adminDonations.confirmSelectedPrefix')} ${selected.size} ${t('adminDonations.confirmNSuffix')}`}
                   </Button>
                 </div>
               </>
@@ -245,25 +247,24 @@ export default function AdminDonations() {
       {confirmTarget && confirmTarget !== 'batch' && (
         <div className="fixed inset-0 bg-text-primary/40 flex items-center justify-center p-xl z-50">
           <div className="bg-surface rounded-lg border border-border p-xl max-w-md w-full flex flex-col gap-lg">
-            <h3 className="text-[16px] font-semibold text-text-primary">Confirm this donation?</h3>
+            <h3 className="text-[16px] font-semibold text-text-primary">{t('adminDonations.confirmThisTitle')}</h3>
 
             <div className="bg-background border border-border rounded-lg p-lg flex flex-col gap-sm text-[14px]">
-              <div className="flex justify-between"><span className="text-text-secondary">Amount</span><span className="font-semibold text-text-primary">${confirmTarget.amount.toLocaleString()} {confirmTarget.currency}</span></div>
-              <div className="flex justify-between"><span className="text-text-secondary">Campaign</span><span className="text-text-primary">{confirmTarget.campaignId?.title?.en || confirmTarget.campaignId?.title?.so}</span></div>
-              <div className="flex justify-between"><span className="text-text-secondary">Donor</span><span className="text-text-primary">{confirmTarget.isAnonymous ? 'Anonymous' : confirmTarget.donorId?.fullName || 'Guest'}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">{t('donate.amountLabel').split(' ')[0]}</span><span className="font-semibold text-text-primary">${confirmTarget.amount.toLocaleString()} {confirmTarget.currency}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">{t('team.campaignLabel')}</span><span className="text-text-primary">{confirmTarget.campaignId?.title?.[language] || confirmTarget.campaignId?.title?.so || confirmTarget.campaignId?.title?.en}</span></div>
+              <div className="flex justify-between"><span className="text-text-secondary">{t('adminDonations.donor')}</span><span className="text-text-primary">{confirmTarget.isAnonymous ? t('campaign.anonymous') : confirmTarget.donorId?.fullName || t('adminDonations.guest')}</span></div>
             </div>
 
             <p className="text-[13px] text-text-secondary">
-              Only confirm after verifying the money genuinely arrived (e.g. mobile money or hawala reference).
-              This updates the campaign's raised amount immediately.
+              {t('adminDonations.singleConfirmNote')}
             </p>
 
             <div className="flex flex-col gap-sm">
-              <label className="text-[14px] font-medium text-text-primary">Transaction reference (optional)</label>
+              <label className="text-[14px] font-medium text-text-primary">{t('adminDonations.referenceLabel')}</label>
               <input
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="e.g. EVC Plus confirmation code"
+                placeholder={t('adminDonations.referencePlaceholder')}
                 className="w-full h-[44px] px-lg rounded border border-border bg-surface text-text-primary outline-none focus:border-2 focus:border-primary"
               />
             </div>
@@ -271,9 +272,9 @@ export default function AdminDonations() {
             {actionError && <p className="text-[13px] text-error">{actionError}</p>}
 
             <div className="flex justify-end gap-md">
-              <Button variant="tertiary" onClick={() => setConfirmTarget(null)}>Cancel</Button>
+              <Button variant="tertiary" onClick={() => setConfirmTarget(null)}>{t('campaign.cancel')}</Button>
               <Button onClick={handleConfirmSingle} disabled={submitting}>
-                {submitting ? 'Confirming…' : 'Confirm payment'}
+                {submitting ? t('adminDonations.confirming') : t('adminDonations.confirmPayment')}
               </Button>
             </div>
           </div>

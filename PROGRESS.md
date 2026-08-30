@@ -1,6 +1,6 @@
 # Kaalmo — Horumarka Mashruuca (Progress Tracker)
 
-> La cusboonaysiiyay: 2026-08-28 (dhinac kow-iyo-tobnaad)
+> La cusboonaysiiyay: 2026-08-29 (dhinac saddex-iyo-tobnaad)
 > Tani waa faylka lagu raad-raaco waxa la dhisay, waxa socda, iyo waxa weli ku dhiman marka loo eego `kaalmo-web-only-spec.md` iyo `Design_Rules.md`.
 
 ---
@@ -9,11 +9,44 @@
 
 | Qayb | Xaalad |
 |---|---|
-| **Backend (server/)** | 🟢 MVP-core + trust/moderation + social features (Follow/Save/Reports/Team/Notifications) waa dhammaystiran — weli lama xirin lacag-bixin dhab ah |
-| **Frontend (client/)** | 🟢 Bogagga oo dhan ee la qorsheeyay waa la dhisay oo dhab ah ula xiran yihiin backend-ka; **i18n dhab ah waa la dib-dhigay** (user codsaday) |
-| **Admin Dashboard** | 🟢 Overview, Campaigns, Verification Queue, Users, **Reports**, Audit Logs — dhab ah; Fraud/Support kaliya ayaa weli preview sample data ah |
-| **Payment Providers** | 🔴 **Ha la taaban** (user si cad u sheegay) — manual/admin-recorded kaliya ayaa jira |
+| **Backend (server/)** | 🟢 MVP-core + trust/moderation + social features (Follow/Save/Reports/Team/Notifications) + **EVC Plus (WaafiPay) dhab ah** waa dhammaystiran |
+| **Frontend (client/)** | 🟢 Bogagga oo dhan ee la qorsheeyay waa la dhisay oo dhab ah ula xiran yihiin backend-ka; **i18n dhab ah — dhammaan 39 bog + shared components (StatusPill/VerificationBadge/ProgressBar/ImageUpload/DashboardLayout nav) waa la buuxiyay** |
+| **Admin Dashboard** | 🟢 Dhammaan qaybaha — Overview, Campaigns, Verification Queue, Users, Reports, **Fraud & Risk (rule-based dhab ah)**, **Support Tickets (dhab ah)**, Audit Logs — waa la dhammaystiray, ma jiro sample data hadhay |
+| **Payment Providers** | 🟢 **EVC Plus (Hormuud, WaafiPay gateway) — dhab ah, USSD push**; donations waa la iska xaqiijiyaa (auto-confirm), admin approval lama baahna |
 | **Deployment** | 🔴 Wali lama bilaabin |
+
+## 0g. Somali/English i18n — dhammaystiran (2026-08-29, dhinac saddex-iyo-tobnaad → afar-iyo-tobnaad)
+
+**Codsi:** "implement i18n and make the navbar like 2 flag of drop-down" → kadibna "some content are still english" → "Dhammaan mid mar ahaan" (dhammaan bogagga hal mar).
+
+- ✅ `client/src/context/LanguageContext.jsx` — `language` state ('so'/'en'), `t(key)` translation function, `setLanguage()`. Guest: keydiya `localStorage`. User la galay: si toos ah ayuu ugu qoraa `PATCH /users/me { language }` (backend-ku horay ayuu u diyaar ahaa)
+- ✅ `client/src/i18n/translations.js` — qaamuus fure-based ah oo ~250 fure ka badan leh, Soomaali iyo Ingiriisi labaduba dhab ah (af dabiici ah, ma aha turjumaad tooska ah — Rule 34/35). Waxaa sidoo kale ku jira `categoryLabel()`/`regionLabel()` helper si loo turjumo qiimaha DB-ga (Campaign.category/region) iyada oo aan la beddelin qiimaha la keydiyay
+- ✅ **Baaxadda hadda — DHAMMAAN 39 bog** (Home, Explore, CampaignDetail, HowItWorks, Safety, HelpCenter, Legal, Contact, Login, Register, CheckEmail, Donor Dashboard/Donate/DonationConfirmed/Saved/Followed/Notifications/Settings, Organizer Dashboard/Analytics/Team/Withdrawals/EditCampaign/wizard-ka 3-tallaabo/Invites/Onboard, Beneficiary Verification, Support MyTickets, iyo dhammaan 9-da bog ee Admin) + shared components (`StatusPill`, `VerificationBadge`, `ProgressBar`, `ImageUpload`, `DashboardLayout` sidebar nav) — dhammaan si buuxda ayaa loogu xiray `t()`
+- ✅ Navbar language control — laga beddelay qoraal "Somali | English" una beddelay **dropdown laba calan ah** (🇸🇴 Soomaali / 🇬🇧 English), la taaban karo si fudud, calaanka la doortay wuxuu leeyahay check-mark
+- ✅ Settings page (`/donor/settings`) waxaa lagu daray doorasho luqad oo la mid ah (fori isla dabaqa, kama sugayo "Save changes")
+- ✅ La tijaabiyay end-to-end browser dhab ah: Home, Explore (categories + regions + campaign cards), Login, Admin Overview oo dhan — dhammaan si sax ah ayay ugu beddelmeen Soomaali, dib u load garayn wuu sii ahaa, server-ka `User.language` ayaa la xaqiijiyay
+- ✅ `npx vite build` — production build guulaystay, ma jirin syntax error 39-ka bog ee la wax ka beddelay
+- **Meelo aan la turjumin (documented gap)**: qoraalka la-abuuray server-ka (Notification.title/body, fraud signal-yada `subject`/`signal` strings) weli waa Ingiriisi tooska ah — turjumaaddoodu waxay u baahan tahay isbeddel backend ah (template bilingual ah), ma aha wax laga qaban karo frontend kaliya
+- Fiiro celin dheeraad ah: waxaa sidoo kale la saxay bug hore u jiray — mobile-ka hero title-ku wuxuu ahaa 82px (ka weyn desktop-ka 68px), taasoo sababtay overflow — hadda waa 32px/48px sax ah
+
+## 0f. Admin features — Fraud & Risk + Support Tickets (2026-08-29, dhinac laba-iyo-tobnaad)
+
+**Codsi:** "implement all the admin features remained make all the features live" — labadii qayb ee kaliya sample data ahaa (Fraud & Risk, Support Tickets) hadda dhab ayay noqdeen.
+
+### Support Tickets — dhab ah, u dhammaystiran
+- ✅ `SupportTicket` model (subject/message/status/replies thread), `POST /support-tickets` (public — guest ama user), `GET/POST /support-tickets/mine[/:id/replies]` (donor/organizer-side), `GET/POST/PATCH /admin/support-tickets` (admin list/reply/status)
+- ✅ **Contact page** (`/contact`) hadda dhab ahaan ticket ayay abuuraysaa (horay waxay ahayd fake "message received" oo aan xogta keydin) — guest (magac+email) ama user (xiriirsan account-kooda)
+- ✅ Bog cusub — **`/support`** (donor/organizer-ku halkan ayuu ka arki karaa ticket-yadiisa, thread-ka oo dhan, jawaab ka celin) — waxaa lagu daray DONOR_NAV iyo ORGANIZER_NAV
+- ✅ Admin Support Tickets page — filter status (open/in_progress/resolved/closed), expand thread, jawaab celin, status beddelid — la tijaabiyay end-to-end browser dhab ah
+- ✅ Admin Overview KPI cusub: "Open support tickets"
+
+### Fraud & Risk — signal-yo dhab ah, rule-based (ma aha ML)
+- ✅ `server/src/services/fraudService.js` — saddex signal oo xogta dhabta ah lagu xisaabiyo mar kasta oo la soo dalbado (`GET /admin/fraud-signals`), ma keydiyo xaalad "dismissed" (signal-ku wuxuu iska baxaa marka pattern-ku joogsado):
+  1. **Donation velocity** — campaign helay ≥5 donation oo la xaqiijiyay hal saac gudahood
+  2. **New account + high goal** — account cusub (<48 saac) oo sameeyay campaign goal-kiisu ≥$2,000
+  3. **Repeat donor** — donor isku mid ah oo ≥4 jeer isla campaign-ka ku deeqay 24 saac gudahood
+- ✅ Admin Fraud & Risk page — signal kasta wuxuu leeyahay link "Review" oo kuu geeya campaign-ka/user-ka dhabta ah (horay "Review" button-ku disabled ayuu ahaa)
+- ✅ La tijaabiyay dhab ahaan: 6 donation oo degdeg ah la sameeyay → velocity signal si sax ah ayuu u soo baxay
 
 ## 0e. Feature cusub (2026-08-28, dhinac kow-iyo-tobnaad)
 
@@ -166,27 +199,24 @@ Marka la helo real payment provider (EVC Plus/eDahab), habka "manual confirm" (m
 - ✅ Donor: Dashboard, Donate, Donation Confirmed
 - ✅ Organizer: Onboard (auto), Dashboard, campaign wizard (Basics w/ **image upload** → Story → Review & Submit), Analytics, Withdrawals
 - ✅ Beneficiary: Verification
-- ✅ Admin: Overview, Campaigns (approve/reject/publish/suspend/restore incl. `submitted`), Verification Queue, Users, **Audit Logs (dhab ah)**
-- 🟡 Admin: Fraud & Risk, Support Tickets — weli sample data (backend subsystems lama dhisin)
+- ✅ Admin: Overview, Campaigns (approve/reject/publish/suspend/restore incl. `submitted`), Verification Queue, Users, **Audit Logs (dhab ah)**, **Fraud & Risk (rule-based dhab ah)**, **Support Tickets (dhab ah)**
 
-### Backend — Models — 12/12
-- ✅ `User`, `Campaign`, `Beneficiary`, `Donation`, `Payment`, `PaymentTransaction`, `Withdrawal`, `PayoutAccount`, `Update`, `Comment`, `Verification`, **`AuditLog`**
+### Backend — Models — 14/14
+- ✅ `User`, `Campaign`, `Beneficiary`, `Donation`, `Payment`, `PaymentTransaction`, `Withdrawal`, `PayoutAccount`, `Update`, `Comment`, `Verification`, `AuditLog`, **`SupportTicket`**, **`CampaignMember`**
 
 ---
 
 ## 3. Waxa Ku Dhiman (Weli Lama Bilaabin) 🔴
 
 ### Backend
-- [ ] Fraud detection / risk scoring (Section 21) — frontend sample data
-- [ ] Support ticket system (Section 24) — frontend sample data
-- [ ] **Real payment provider (mobile money — EVC Plus/eDahab/Zaad) — user si cad u sheegay in la dib-dhigo, ha la taaban**
-- [ ] Webhook handling + idempotency (ku xiran payment provider-ka kore)
+- [ ] Real payment provider-yo dheeraad ah (eDahab, Zaad, bank, card) — EVC Plus (WaafiPay) hadda dhab ayuu yahay, kuwa kale weli lama xirin
+- [ ] Webhook handling + idempotency (EVC Plus hadda synchronous ayuu yahay — ma leh webhook, mana u baahna, laakiin provider-yada mustaqbalka qaarkood way u baahnaan doonaan)
 - [ ] Like (donation "support" reaction) — Follow/Bookmark waa la dhammeeyay, Like weli lama dhisin
 - [ ] Notification email channel — hadda in-app kaliya; email-events (via Resend) weli lama xirin dhammaan dhacdooyinka
 - [ ] Local disk storage (`server/uploads/`) waa MVP fallback — u baahan S3/Cloudflare R2 marka la geeyo production (fayl-yadu kuma hadhi doonaan disk-ka haddii server-ku dib loo geeyo)
 
 ### Frontend
-- [ ] Somali/English isku-dhafka runtime-ka (i18n dhab ah) — **la dib-dhigay codsi kale**
+- [ ] i18n backend content — Notification title/body iyo fraud signal strings waxaa server-ka lagu abuuraa Ingiriisi ah, u baahan template bilingual ah (eeg 0g)
 
 ### Deployment — 0% la bilaabay
 - [ ] Dockerize server + client
@@ -197,10 +227,9 @@ Marka la helo real payment provider (EVC Plus/eDahab), habka "manual confirm" (m
 
 ## 4. Talaabada Xigta ee La Soo Jeediyay
 
-1. **Somali/English i18n dhab ah** — marka la ogolaado in la bilaabo
-2. **Real payment provider** — marka provider (EVC Plus/eDahab/Zaad) la xaqiijiyo oo la ogolaado in la bilaabo
-3. Email notification channel (ma ahan in-app kaliya)
-4. Fraud/Support backend subsystems (hadda frontend-ku sample data ayuu tusayaa)
+1. Provider-yo dheeraad ah (eDahab/Zaad/bank/card) — marka la xaqiijiyo oo la ogolaado in la bilaabo
+2. Email notification channel (ma ahan in-app kaliya)
+3. Notification/fraud-signal backend content oo bilingual ka dhigid (haddii loo baahdo)
 
 Fadlan ii sheeg xagee la bilaabo.
 

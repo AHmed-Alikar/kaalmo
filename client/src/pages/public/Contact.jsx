@@ -2,49 +2,100 @@ import { useState } from 'react';
 import PageLayout from '../../components/PageLayout';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import api from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Contact() {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // No backend endpoint exists yet for support tickets — see PROGRESS.md.
-    // We show a calm confirmation rather than silently pretending to send it.
-    setSent(true);
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.post('/support-tickets', {
+        subject: form.subject || 'Message from Contact page',
+        message: form.message,
+        guestName: user ? undefined : form.name,
+        guestEmail: user ? undefined : form.email,
+      });
+      setSent(true);
+    } catch (err) {
+      setError(err.response?.data?.error?.message || t('contact.errorFallback'));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <PageLayout>
       <div className="max-w-container mx-auto px-xl py-3xl max-w-xl">
-        <h1 className="text-[32px] font-bold text-text-primary mb-sm">Contact Kaalmo</h1>
+        <h1 className="text-[32px] font-bold text-text-primary mb-sm">{t('contact.title')}</h1>
         <p className="text-[15px] text-text-secondary mb-2xl">
-          Have a question about a campaign, a donation, or your account? Send us a message.
+          {t('contact.subtitle')}
         </p>
 
         {sent ? (
           <div className="bg-success/10 border border-success/30 rounded-lg p-xl flex items-center gap-md">
             <span className="material-symbols-outlined text-success">check_circle</span>
             <div>
-              <p className="text-[15px] font-medium text-text-primary">Message received</p>
-              <p className="text-[13px] text-text-secondary">Our support team will reply by email within 1–2 business days.</p>
+              <p className="text-[15px] font-medium text-text-primary">{t('contact.sentTitle')}</p>
+              <p className="text-[13px] text-text-secondary">
+                {user ? t('contact.sentTextUser') : t('contact.sentTextGuest')}
+              </p>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
-            <Input label="Your name" id="name" required />
-            <Input label="Email address" id="email" type="email" required />
+            {!user && (
+              <>
+                <Input
+                  label={t('contact.name')}
+                  id="name"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+                <Input
+                  label={t('contact.email')}
+                  id="email"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </>
+            )}
+            <Input
+              label={t('contact.subject')}
+              id="subject"
+              required
+              value={form.subject}
+              onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            />
             <div className="flex flex-col gap-sm">
               <label htmlFor="message" className="text-[14px] font-medium text-text-primary">
-                How can we help?
+                {t('contact.howCanWeHelp')}
               </label>
               <textarea
                 id="message"
                 rows={5}
                 required
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
                 className="w-full px-lg py-md rounded border border-border bg-surface text-text-primary outline-none focus:border-2 focus:border-primary transition-colors"
               />
             </div>
-            <Button type="submit" className="self-start">Send message</Button>
+            {error && <p className="text-[13px] text-error bg-error/10 border border-error/30 rounded p-md">{error}</p>}
+            <Button type="submit" disabled={submitting} className="self-start">
+              {submitting ? t('contact.sending') : t('contact.sendMessage')}
+            </Button>
           </form>
         )}
       </div>

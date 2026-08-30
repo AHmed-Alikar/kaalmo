@@ -5,9 +5,11 @@ import StatusPill from '../../components/StatusPill';
 import EmptyState from '../../components/EmptyState';
 import Button from '../../components/Button';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 import { DONOR_NAV } from './nav';
 
 export default function DonorDashboard() {
+  const { t, language } = useLanguage();
   const [donations, setDonations] = useState([]);
   const [status, setStatus] = useState('loading');
 
@@ -22,9 +24,9 @@ export default function DonorDashboard() {
   }, []);
 
   return (
-    <DashboardLayout title="My account" nav={DONOR_NAV}>
+    <DashboardLayout title={t('donor.myAccount')} nav={DONOR_NAV}>
       <div className="flex flex-col gap-xl">
-        <h1 className="text-[24px] font-bold text-text-primary">My donations</h1>
+        <h1 className="text-[24px] font-bold text-text-primary">{t('donor.myDonations')}</h1>
 
         {status === 'loading' && (
           <div className="flex flex-col gap-sm">
@@ -35,17 +37,17 @@ export default function DonorDashboard() {
         )}
 
         {status === 'error' && (
-          <EmptyState icon="wifi_off" title="Couldn't load your donations" description="Please check your connection and try again." />
+          <EmptyState icon="wifi_off" title={t('donor.loadDonationsErrorTitle')} description={t('common.checkConnection')} />
         )}
 
         {status === 'ready' && donations.length === 0 && (
           <EmptyState
             icon="volunteer_activism"
-            title="No donations yet"
-            description="Your first donation will appear here once you support a campaign."
+            title={t('donor.noDonationsTitle')}
+            description={t('donor.noDonationsDesc')}
             action={
               <Link to="/explore">
-                <Button variant="secondary">Explore campaigns</Button>
+                <Button variant="secondary">{t('donor.exploreCampaigns')}</Button>
               </Link>
             }
           />
@@ -57,7 +59,7 @@ export default function DonorDashboard() {
               <div key={d._id} className="flex items-center justify-between py-lg">
                 <div>
                   <p className="text-[14px] font-medium text-text-primary">
-                    {d.campaignId?.title?.en || d.campaignId?.title?.so || 'Campaign'}
+                    {d.campaignId?.title?.[language] || d.campaignId?.title?.so || d.campaignId?.title?.en || t('donor.campaign')}
                   </p>
                   <p className="text-[13px] text-text-secondary">{new Date(d.createdAt).toLocaleDateString()}</p>
                 </div>

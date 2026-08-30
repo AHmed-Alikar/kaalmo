@@ -27,12 +27,15 @@ import OrganizerDashboard from './pages/organizer/Dashboard';
 import CreateCampaignBasics from './pages/organizer/CreateCampaignBasics';
 import CreateCampaignStory from './pages/organizer/CreateCampaignStory';
 import CreateCampaignReview from './pages/organizer/CreateCampaignReview';
+import EditCampaign from './pages/organizer/EditCampaign';
 import Analytics from './pages/organizer/Analytics';
 import Withdrawals from './pages/organizer/Withdrawals';
 import Team from './pages/organizer/Team';
 import Invites from './pages/organizer/Invites';
 
 import Verification from './pages/beneficiary/Verification';
+
+import MyTickets from './pages/support/MyTickets';
 
 import AdminOverview from './pages/admin/Overview';
 import AdminCampaigns from './pages/admin/Campaigns';
@@ -75,11 +78,18 @@ export default function App() {
       {/* Organizer */}
       <Route path="/organizer/onboard" element={<ProtectedRoute><OrganizerOnboard /></ProtectedRoute>} />
       <Route path="/organizer/invites" element={<ProtectedRoute><Invites /></ProtectedRoute>} />
-      <Route path="/organizer" element={<ProtectedRoute roles={['organizer', 'admin']}><OrganizerDashboard /></ProtectedRoute>} />
+      <Route path="/support" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+      {/* Dashboard and Analytics show owned + co-organized campaigns
+          (server-scoped by CampaignMember, not by global role) — a
+          co-organizer whose global role is still 'donor' must be able to
+          reach these. Campaign creation and Team/Withdrawals stay
+          organizer-role-gated below (owner-only actions). */}
+      <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
+      <Route path="/organizer/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+      <Route path="/organizer/campaigns/:id/edit" element={<ProtectedRoute><EditCampaign /></ProtectedRoute>} />
       <Route path="/organizer/new/basics" element={<ProtectedRoute roles={['organizer', 'admin']}><CreateCampaignBasics /></ProtectedRoute>} />
       <Route path="/organizer/new/story" element={<ProtectedRoute roles={['organizer', 'admin']}><CreateCampaignStory /></ProtectedRoute>} />
       <Route path="/organizer/new/review" element={<ProtectedRoute roles={['organizer', 'admin']}><CreateCampaignReview /></ProtectedRoute>} />
-      <Route path="/organizer/analytics" element={<ProtectedRoute roles={['organizer', 'admin']}><Analytics /></ProtectedRoute>} />
       <Route path="/organizer/team" element={<ProtectedRoute roles={['organizer', 'admin']}><Team /></ProtectedRoute>} />
       <Route path="/organizer/withdrawals" element={<ProtectedRoute roles={['organizer', 'admin']}><Withdrawals /></ProtectedRoute>} />
 

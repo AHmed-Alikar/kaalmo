@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import api from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 
 // Uploads to the local disk-storage endpoint (POST /uploads/image) — the MVP
 // fallback until S3/Cloudflare R2 is wired up (see PROGRESS.md). Shows
 // upload progress per Design_Rules.md Rule 28.
 export default function ImageUpload({ label, value, onChange }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,7 +25,7 @@ export default function ImageUpload({ label, value, onChange }) {
       });
       onChange(data.url);
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Could not upload this image. Please try a smaller JPEG, PNG, or WebP file.');
+      setError(err.response?.data?.error?.message || t('imageUpload.error'));
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -55,7 +57,7 @@ export default function ImageUpload({ label, value, onChange }) {
           <span className="material-symbols-outlined" style={{ fontSize: 32 }}>
             {uploading ? 'progress_activity' : 'add_photo_alternate'}
           </span>
-          <span className="text-[13px]">{uploading ? 'Uploading…' : 'Click to upload a cover photo'}</span>
+          <span className="text-[13px]">{uploading ? t('imageUpload.uploading') : t('imageUpload.clickToUpload')}</span>
         </button>
       )}
 

@@ -9,7 +9,9 @@ export default function ProtectedRoute({ children, roles, allowUnverified = fals
   const location = useLocation();
 
   if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  if (!allowUnverified && !user.emailVerified) return <Navigate to="/check-email" replace />;
+  if (!allowUnverified && !user.emailVerified) {
+    return <Navigate to={`/check-email?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  }
   if (roles && !roles.some((r) => user.roles.includes(r))) {
     return <Navigate to="/" replace />;
   }

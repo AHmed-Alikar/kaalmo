@@ -1,8 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
+import { useLanguage } from '../context/LanguageContext';
 
+// Sidebar nav arrays (donor/organizer/admin nav.js) carry a `labelKey` —
+// translating here means every dashboard sidebar is covered by one change.
 export default function DashboardLayout({ title, nav, children }) {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -24,7 +28,7 @@ export default function DashboardLayout({ title, nav, children }) {
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                     {item.icon}
                   </span>
-                  {item.label}
+                  {item.labelKey ? t(item.labelKey) : item.label}
                 </Link>
               );
             })}

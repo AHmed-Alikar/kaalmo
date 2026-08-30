@@ -1,11 +1,16 @@
 import { Link } from 'react-router-dom';
 import ProgressBar from './ProgressBar';
 import VerificationBadge from './VerificationBadge';
+import { useLanguage } from '../context/LanguageContext';
+import { categoryLabel, regionLabel } from '../i18n/translations';
 
 // Campaign card content follows Design_Rules.md Rule 21 — image, category,
 // title, organizer, verification, raised/goal, progress, donor count only.
 export default function CampaignCard({ campaign }) {
-  const title = campaign.title?.en || campaign.title?.so;
+  const { language, t } = useLanguage();
+  // Bilingual campaign content shows in the viewer's chosen language first —
+  // English was previously always preferred regardless of app language.
+  const title = campaign.title?.[language] || campaign.title?.so || campaign.title?.en;
 
   return (
     <Link
@@ -27,7 +32,7 @@ export default function CampaignCard({ campaign }) {
           </div>
         )}
         <span className="absolute top-sm right-sm bg-surface/95 border border-border px-sm py-xs rounded-sm text-[12px] font-medium text-primary">
-          {campaign.category}
+          {categoryLabel(campaign.category, language)}
         </span>
       </div>
       <div className="p-lg flex flex-col flex-grow gap-sm">
@@ -41,12 +46,12 @@ export default function CampaignCard({ campaign }) {
         <h3 className="text-[16px] font-semibold text-text-primary leading-snug group-hover:text-primary transition-colors">
           {title}
         </h3>
-        <p className="text-[13px] text-text-secondary">{campaign.region}</p>
+        <p className="text-[13px] text-text-secondary">{regionLabel(campaign.region, language)}</p>
         <div className="mt-auto pt-sm flex flex-col gap-xs">
           <ProgressBar raised={campaign.raisedAmount} goal={campaign.goalAmount} />
           {typeof campaign.donorCount === 'number' && (
             <p className="text-[12px] text-text-secondary">
-              {campaign.donorCount} {campaign.donorCount === 1 ? 'supporter' : 'supporters'}
+              {campaign.donorCount} {campaign.donorCount === 1 ? t('card.supporter') : t('card.supporters')}
             </p>
           )}
         </div>

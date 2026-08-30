@@ -5,8 +5,10 @@ import Button from '../../components/Button';
 import StatusPill from '../../components/StatusPill';
 import ImageUpload from '../../components/ImageUpload';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Verification() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ fullName: '', idDocumentUrl: null });
   const [error, setError] = useState(null);
@@ -35,7 +37,7 @@ export default function Verification() {
       setProfile(data);
       setSubmitted(true);
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Could not submit your verification. Please try again.');
+      setError(err.response?.data?.error?.message || t('verification.error'));
     } finally {
       setSubmitting(false);
     }
@@ -44,15 +46,14 @@ export default function Verification() {
   return (
     <PageLayout>
       <div className="max-w-[560px] mx-auto px-xl py-3xl">
-        <h1 className="text-[24px] font-bold text-text-primary mb-xs">Beneficiary verification</h1>
+        <h1 className="text-[24px] font-bold text-text-primary mb-xs">{t('verification.title')}</h1>
         <p className="text-[14px] text-text-secondary mb-2xl">
-          Verifying the beneficiary builds trust with donors, and is required before any withdrawal can
-          be requested for their campaign.
+          {t('verification.subtitle')}
         </p>
 
         {profile && (
           <div className="bg-background border border-border rounded-lg p-lg mb-xl flex items-center justify-between">
-            <span className="text-[14px] text-text-primary">Current status</span>
+            <span className="text-[14px] text-text-primary">{t('verification.currentStatus')}</span>
             <StatusPill status={profile.verificationStatus} />
           </div>
         )}
@@ -61,14 +62,14 @@ export default function Verification() {
           <div className="bg-success/10 border border-success/30 rounded-lg p-xl flex items-center gap-md">
             <span className="material-symbols-outlined text-success">check_circle</span>
             <div>
-              <p className="text-[15px] font-medium text-text-primary">Submitted for review</p>
-              <p className="text-[13px] text-text-secondary">Our team will verify these details and update the status above.</p>
+              <p className="text-[15px] font-medium text-text-primary">{t('verification.submittedTitle')}</p>
+              <p className="text-[13px] text-text-secondary">{t('verification.submittedDesc')}</p>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
             <Input
-              label="Full legal name"
+              label={t('verification.fullLegalName')}
               id="fullName"
               required
               value={form.fullName}
@@ -76,7 +77,7 @@ export default function Verification() {
             />
 
             <ImageUpload
-              label="Identity document (photo ID)"
+              label={t('verification.idDocument')}
               value={form.idDocumentUrl}
               onChange={(url) => setForm({ ...form, idDocumentUrl: url })}
             />
@@ -84,7 +85,7 @@ export default function Verification() {
             {error && <p className="text-[13px] text-error bg-error/10 border border-error/30 rounded p-md">{error}</p>}
 
             <Button type="submit" disabled={submitting} className="self-start">
-              {submitting ? 'Submitting…' : 'Submit for verification'}
+              {submitting ? t('verification.submitting') : t('verification.submitButton')}
             </Button>
           </form>
         )}

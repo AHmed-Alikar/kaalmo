@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { reviewCampaignSchema, confirmPaymentSchema, confirmPaymentsBatchSchema } from '../validators/adminValidators.js';
 import { reviewReportSchema } from '../validators/reportValidators.js';
 import * as reportController from '../controllers/reportController.js';
+import * as supportTicketController from '../controllers/supportTicketController.js';
+import { replyTicketSchema, updateTicketStatusSchema } from '../validators/supportTicketValidators.js';
 
 const reviewBeneficiarySchema = z.object({ status: z.enum(['verified', 'rejected']) });
 const updateUserStatusSchema = z.object({ status: z.enum(['active', 'suspended', 'banned']) });
@@ -31,5 +33,12 @@ router.get('/audit-logs', adminController.listAuditLogs);
 
 router.get('/reports', reportController.listReports);
 router.patch('/reports/:id/review', validate(reviewReportSchema), reportController.reviewReport);
+
+router.get('/support-tickets', supportTicketController.listSupportTickets);
+router.get('/support-tickets/:id', supportTicketController.getSupportTicket);
+router.post('/support-tickets/:id/replies', validate(replyTicketSchema), supportTicketController.replyToSupportTicket);
+router.patch('/support-tickets/:id', validate(updateTicketStatusSchema), supportTicketController.updateSupportTicketStatus);
+
+router.get('/fraud-signals', adminController.listFraudSignals);
 
 export default router;

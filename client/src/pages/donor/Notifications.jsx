@@ -4,11 +4,16 @@ import DashboardLayout from '../../components/DashboardLayout';
 import EmptyState from '../../components/EmptyState';
 import Button from '../../components/Button';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 import { DONOR_NAV } from './nav';
 
 // Only meaningful events reach here — no notification noise
 // (Design_Rules.md Rule 38).
+// Note: n.title/n.body are generated server-side (English) — full i18n of
+// notification content would need bilingual templates on the backend; the
+// page chrome here is translated, the notification text itself is not yet.
 export default function Notifications() {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [status, setStatus] = useState('loading');
 
@@ -35,12 +40,12 @@ export default function Notifications() {
   }
 
   return (
-    <DashboardLayout title="My account" nav={DONOR_NAV}>
+    <DashboardLayout title={t('donor.myAccount')} nav={DONOR_NAV}>
       <div className="flex flex-col gap-xl">
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-text-primary">Notifications</h1>
+          <h1 className="text-[24px] font-bold text-text-primary">{t('donor.notifications')}</h1>
           {notifications.some((n) => !n.read) && (
-            <Button variant="tertiary" className="h-auto p-0" onClick={markAllRead}>Mark all as read</Button>
+            <Button variant="tertiary" className="h-auto p-0" onClick={markAllRead}>{t('donor.markAllRead')}</Button>
           )}
         </div>
 
@@ -49,11 +54,11 @@ export default function Notifications() {
         )}
 
         {status === 'error' && (
-          <EmptyState icon="wifi_off" title="Couldn't load notifications" description="Please check your connection and try again." />
+          <EmptyState icon="wifi_off" title={t('donor.loadNotificationsErrorTitle')} description={t('common.checkConnection')} />
         )}
 
         {status === 'ready' && notifications.length === 0 && (
-          <EmptyState icon="notifications" title="No notifications yet" description="Updates on your donations, campaigns, and account will appear here." />
+          <EmptyState icon="notifications" title={t('donor.noNotificationsTitle')} description={t('donor.noNotificationsDesc')} />
         )}
 
         {notifications.length > 0 && (
@@ -67,11 +72,11 @@ export default function Notifications() {
                 </div>
                 <div className="flex flex-col items-end gap-xs flex-shrink-0">
                   {n.targetUrl && (
-                    <Link to={n.targetUrl} className="text-[13px] text-primary hover:underline">View</Link>
+                    <Link to={n.targetUrl} className="text-[13px] text-primary hover:underline">{t('donor.view')}</Link>
                   )}
                   {!n.read && (
                     <button onClick={() => markRead(n._id)} className="text-[12px] text-text-secondary hover:text-primary">
-                      Mark read
+                      {t('donor.markRead')}
                     </button>
                   )}
                 </div>

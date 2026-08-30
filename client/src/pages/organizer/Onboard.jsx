@@ -5,6 +5,7 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Becoming an organizer requires a dedicated email confirmation — a
 // deliberate, separate step from general account verification — so nobody
@@ -14,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 // immediately (no separate page for clicking a link).
 export default function OrganizerOnboard() {
   const { user, requestOrganizerAccess, applyTokens } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [form, setForm] = useState({ fullName: user?.fullName || '', purpose: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +35,7 @@ export default function OrganizerOnboard() {
       await requestOrganizerAccess(form);
       setSent(true);
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Something went wrong. Please try again.');
+      setError(err.response?.data?.error?.message || t('onboard.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -48,7 +50,7 @@ export default function OrganizerOnboard() {
       await applyTokens(data);
       navigate('/organizer/new/basics');
     } catch (err) {
-      setCodeError(err.response?.data?.error?.message || 'Could not verify this code. Please try again.');
+      setCodeError(err.response?.data?.error?.message || t('checkEmail.verifyError'));
     } finally {
       setVerifying(false);
     }
@@ -61,7 +63,7 @@ export default function OrganizerOnboard() {
       await requestOrganizerAccess(form);
       setResent(true);
     } catch (err) {
-      setCodeError(err.response?.data?.error?.message || 'Could not resend the code.');
+      setCodeError(err.response?.data?.error?.message || t('checkEmail.resendError'));
     }
   }
 
@@ -71,9 +73,9 @@ export default function OrganizerOnboard() {
         <div className="max-w-[440px] mx-auto px-xl py-4xl flex flex-col items-center gap-lg">
           <span className="material-symbols-outlined text-primary" style={{ fontSize: 48 }}>mark_email_unread</span>
           <div className="text-center">
-            <h1 className="text-[22px] font-bold text-text-primary">Confirm by email</h1>
+            <h1 className="text-[22px] font-bold text-text-primary">{t('onboard.confirmByEmail')}</h1>
             <p className="text-[14px] text-text-secondary mt-xs">
-              Enter the 6-digit code we sent to your email address to activate organizer access.
+              {t('onboard.confirmSubtitle')}
             </p>
           </div>
 
@@ -93,14 +95,14 @@ export default function OrganizerOnboard() {
             {codeError && <p className="text-[13px] text-error text-center">{codeError}</p>}
 
             <Button type="submit" disabled={verifying || code.length !== 6} className="w-full">
-              {verifying ? 'Verifying…' : 'Confirm and continue'}
+              {verifying ? t('checkEmail.verifying') : t('onboard.confirmAndContinue')}
             </Button>
           </form>
 
-          {resent && <p className="text-[13px] text-success">A new code was sent.</p>}
+          {resent && <p className="text-[13px] text-success">{t('checkEmail.resent')}</p>}
 
           <button onClick={handleResend} className="text-[13px] text-primary hover:underline">
-            Didn't get a code? Resend it
+            {t('checkEmail.didntGetCode')}
           </button>
         </div>
       </PageLayout>
@@ -112,15 +114,15 @@ export default function OrganizerOnboard() {
       <div className="max-w-[480px] mx-auto px-xl py-4xl">
         <div className="text-center mb-2xl flex flex-col items-center gap-sm">
           <span className="material-symbols-outlined text-primary" style={{ fontSize: 40 }}>campaign</span>
-          <h1 className="text-[24px] font-bold text-text-primary">Start a fundraiser</h1>
+          <h1 className="text-[24px] font-bold text-text-primary">{t('nav.startFundraiser')}</h1>
           <p className="text-[14px] text-text-secondary">
-            Confirm a few details and we'll email you a code to activate organizer access.
+            {t('onboard.subtitle')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-lg bg-surface border border-border rounded-lg p-xl">
           <Input
-            label="Your full name"
+            label={t('onboard.yourFullName')}
             id="fullName"
             required
             value={form.fullName}
@@ -129,12 +131,12 @@ export default function OrganizerOnboard() {
 
           <div className="flex flex-col gap-sm">
             <label htmlFor="purpose" className="text-[14px] font-medium text-text-primary">
-              What do you plan to raise money for?
+              {t('onboard.purposeLabel')}
             </label>
             <textarea
               id="purpose"
               rows={3}
-              placeholder="e.g. Medical treatment for my mother"
+              placeholder={t('onboard.purposePlaceholder')}
               value={form.purpose}
               onChange={(e) => setForm({ ...form, purpose: e.target.value })}
               className="w-full px-lg py-md rounded border border-border bg-surface text-text-primary outline-none focus:border-2 focus:border-primary transition-colors"
@@ -144,7 +146,7 @@ export default function OrganizerOnboard() {
           {error && <p className="text-[13px] text-error bg-error/10 border border-error/30 rounded p-md">{error}</p>}
 
           <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? 'Sending…' : 'Send confirmation code'}
+            {submitting ? t('team.sending') : t('onboard.sendCode')}
           </Button>
         </form>
       </div>

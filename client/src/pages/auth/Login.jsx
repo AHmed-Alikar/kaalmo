@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import PageLayout from '../../components/PageLayout';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Login() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const redirectTo = location.state?.from || searchParams.get('redirect') || '/';
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,10 +24,9 @@ export default function Login() {
     try {
       const loggedInUser = await login(form);
       if (!loggedInUser.emailVerified) {
-        navigate('/check-email');
+        navigate(`/check-email?redirect=${encodeURIComponent(redirectTo)}`);
         return;
       }
-      const redirectTo = location.state?.from || '/';
       navigate(redirectTo);
     } catch (err) {
       setError(err.message);
@@ -37,13 +40,13 @@ export default function Login() {
       <div className="flex items-center justify-center px-xl py-4xl min-h-[80vh]">
         <div className="w-full max-w-[420px] bg-surface border border-border rounded-lg p-2xl">
           <div className="text-center mb-xl">
-            <h1 className="text-[24px] font-bold text-text-primary mb-xs">Welcome back</h1>
-            <p className="text-[14px] text-text-secondary">Log in to continue to Kaalmo.</p>
+            <h1 className="text-[24px] font-bold text-text-primary mb-xs">{t('login.welcomeBack')}</h1>
+            <p className="text-[14px] text-text-secondary">{t('login.subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
             <Input
-              label="Email address"
+              label={t('login.email')}
               id="email"
               type="email"
               required
@@ -51,7 +54,7 @@ export default function Login() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
             <Input
-              label="Password"
+              label={t('login.password')}
               id="password"
               type="password"
               required
@@ -64,13 +67,13 @@ export default function Login() {
             )}
 
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? 'Logging in…' : 'Log in'}
+              {submitting ? t('login.loggingIn') : t('login.logIn')}
             </Button>
           </form>
 
           <p className="text-center text-[13px] text-text-secondary mt-xl">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-primary hover:underline">Create one</Link>
+            {t('login.noAccount')}{' '}
+            <Link to="/register" className="text-primary hover:underline">{t('login.createOne')}</Link>
           </p>
         </div>
       </div>

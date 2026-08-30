@@ -7,6 +7,8 @@ import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { categoryLabel, regionLabel } from '../../i18n/translations';
 
 // Campaign detail is a Trust + Understanding + Donation experience
 // (Design_Rules.md Rule 22) — story and trust signals come before secondary
@@ -15,6 +17,7 @@ export default function CampaignDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [campaign, setCampaign] = useState(null);
   const [updates, setUpdates] = useState([]);
   const [donations, setDonations] = useState([]);
@@ -95,7 +98,7 @@ export default function CampaignDetail() {
       await api.post('/reports', { targetType: 'campaign', targetId: id, reason: reportReason });
       setReportSent(true);
     } catch (err) {
-      setReportError(err.response?.data?.error?.message || 'Could not submit this report.');
+      setReportError(err.response?.data?.error?.message || t('campaign.reportError'));
     }
   }
 
@@ -117,11 +120,11 @@ export default function CampaignDetail() {
         <div className="max-w-container mx-auto px-xl py-4xl">
           <EmptyState
             icon="error"
-            title="Campaign not found or unavailable"
-            description="This campaign may have been removed, or the link is incorrect."
+            title={t('campaign.notFoundTitle')}
+            description={t('campaign.notFoundDesc')}
             action={
               <Link to="/explore">
-                <Button variant="secondary">Back to Explore</Button>
+                <Button variant="secondary">{t('campaign.backToExplore')}</Button>
               </Link>
             }
           />
@@ -130,8 +133,8 @@ export default function CampaignDetail() {
     );
   }
 
-  const title = campaign.title?.en || campaign.title?.so;
-  const story = campaign.story?.en || campaign.story?.so;
+  const title = campaign.title?.[language] || campaign.title?.so || campaign.title?.en;
+  const story = campaign.story?.[language] || campaign.story?.so || campaign.story?.en;
 
   return (
     <PageLayout>
@@ -148,7 +151,7 @@ export default function CampaignDetail() {
 
           <div className="flex flex-col gap-sm">
             <div className="flex items-center justify-between gap-md">
-              <span className="text-[13px] font-medium text-primary uppercase tracking-wide">{campaign.category}</span>
+              <span className="text-[13px] font-medium text-primary uppercase tracking-wide">{categoryLabel(campaign.category, language)}</span>
               <button
                 onClick={toggleSave}
                 className="flex items-center gap-xs text-[13px] text-text-secondary hover:text-primary transition-colors"
@@ -156,7 +159,7 @@ export default function CampaignDetail() {
                 <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: saved ? "'FILL' 1" : "'FILL' 0" }}>
                   bookmark
                 </span>
-                {saved ? 'Saved' : 'Save'}
+                {saved ? t('campaign.saved') : t('campaign.save')}
               </button>
             </div>
             <h1 className="text-[28px] md:text-[32px] font-bold text-text-primary leading-tight">{title}</h1>
@@ -168,26 +171,26 @@ export default function CampaignDetail() {
           </div>
 
           <div className="prose-none">
-            <h2 className="text-[18px] font-semibold text-text-primary mb-sm">The story</h2>
+            <h2 className="text-[18px] font-semibold text-text-primary mb-sm">{t('campaign.theStory')}</h2>
             <p className="text-[15px] text-text-secondary leading-relaxed whitespace-pre-line">{story}</p>
           </div>
 
           <div>
             <h2 className="text-[18px] font-semibold text-text-primary mb-md">
-              Recent donations {supporterCount > 0 && <span className="text-text-secondary font-normal">({supporterCount})</span>}
+              {t('campaign.recentDonations')} {supporterCount > 0 && <span className="text-text-secondary font-normal">({supporterCount})</span>}
             </h2>
             {donations.length === 0 ? (
               <EmptyState
                 icon="volunteer_activism"
-                title="No donations yet"
-                description="Be the first to support this campaign."
+                title={t('campaign.noDonationsTitle')}
+                description={t('campaign.noDonationsDesc')}
               />
             ) : (
               <div className="flex flex-col divide-y divide-border border-t border-b border-border">
                 {donations.map((d) => (
                   <div key={d._id} className="py-md flex items-start justify-between gap-md">
                     <div className="min-w-0">
-                      <p className="text-[14px] font-medium text-text-primary">{d.donorName || 'Anonymous'}</p>
+                      <p className="text-[14px] font-medium text-text-primary">{d.donorName || t('campaign.anonymous')}</p>
                       {d.message && <p className="text-[13px] text-text-secondary mt-xs truncate">{d.message}</p>}
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -202,19 +205,19 @@ export default function CampaignDetail() {
 
           <div>
             <div className="flex items-center justify-between mb-md">
-              <h2 className="text-[18px] font-semibold text-text-primary">Updates</h2>
+              <h2 className="text-[18px] font-semibold text-text-primary">{t('campaign.updates')}</h2>
               <button
                 onClick={toggleFollow}
                 className={`text-[13px] font-medium transition-colors ${following ? 'text-primary' : 'text-text-secondary hover:text-primary'}`}
               >
-                {following ? '✓ Following' : 'Follow for updates'}
+                {following ? t('campaign.following') : t('campaign.followForUpdates')}
               </button>
             </div>
             {updates.length === 0 ? (
               <EmptyState
                 icon="update"
-                title="No updates yet"
-                description="The organizer's next update will appear here so you can see how funds are being used."
+                title={t('campaign.noUpdatesTitle')}
+                description={t('campaign.noUpdatesDesc')}
               />
             ) : (
               <div className="flex flex-col gap-lg">
@@ -236,24 +239,24 @@ export default function CampaignDetail() {
           <div className="sticky top-24 bg-surface border border-border rounded-lg p-xl flex flex-col gap-lg">
             <ProgressBar raised={campaign.raisedAmount} goal={campaign.goalAmount} />
             <p className="text-[13px] text-text-secondary">
-              {supporterCount} {supporterCount === 1 ? 'supporter' : 'supporters'} · {campaign.region || 'Region not specified'}
+              {supporterCount} {supporterCount === 1 ? t('card.supporter') : t('card.supporters')} · {campaign.region ? regionLabel(campaign.region, language) : t('campaign.regionNotSpecified')}
             </p>
 
             <Link to={`/donate/${campaign._id}`}>
-              <Button className="w-full">Donate to this campaign</Button>
+              <Button className="w-full">{t('campaign.donateButton')}</Button>
             </Link>
 
             <div className="flex items-center justify-between pt-md border-t border-border">
               <button onClick={handleShare} className="flex items-center gap-xs text-[13px] text-text-secondary hover:text-primary transition-colors">
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>share</span>
-                {copied ? 'Link copied' : 'Share'}
+                {copied ? t('campaign.linkCopied') : t('campaign.share')}
               </button>
               <button
                 onClick={() => setReportOpen(true)}
                 className="flex items-center gap-xs text-[13px] text-text-secondary hover:text-error transition-colors"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>flag</span>
-                Report
+                {t('campaign.report')}
               </button>
             </div>
           </div>
@@ -265,16 +268,16 @@ export default function CampaignDetail() {
           <div className="bg-surface rounded-lg border border-border p-xl max-w-md w-full flex flex-col gap-lg">
             {reportSent ? (
               <>
-                <h3 className="text-[16px] font-semibold text-text-primary">Report submitted</h3>
-                <p className="text-[13px] text-text-secondary">Our Trust &amp; Safety team will review this campaign.</p>
+                <h3 className="text-[16px] font-semibold text-text-primary">{t('campaign.reportSubmittedTitle')}</h3>
+                <p className="text-[13px] text-text-secondary">{t('campaign.reportSubmittedDesc')}</p>
                 <Button variant="secondary" onClick={() => { setReportOpen(false); setReportSent(false); setReportReason(''); }}>
-                  Close
+                  {t('campaign.close')}
                 </Button>
               </>
             ) : (
               <>
-                <h3 className="text-[16px] font-semibold text-text-primary">Report this campaign</h3>
-                <p className="text-[13px] text-text-secondary">Tell us what looks wrong. Your report is reviewed by our team.</p>
+                <h3 className="text-[16px] font-semibold text-text-primary">{t('campaign.reportTitle')}</h3>
+                <p className="text-[13px] text-text-secondary">{t('campaign.reportDesc')}</p>
                 <form onSubmit={handleReport} className="flex flex-col gap-lg">
                   <textarea
                     rows={3}
@@ -282,13 +285,13 @@ export default function CampaignDetail() {
                     minLength={5}
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
-                    placeholder="What's the concern?"
+                    placeholder={t('campaign.reportPlaceholder')}
                     className="w-full px-lg py-md rounded border border-border bg-surface text-text-primary outline-none focus:border-2 focus:border-primary"
                   />
                   {reportError && <p className="text-[13px] text-error">{reportError}</p>}
                   <div className="flex justify-end gap-md">
-                    <Button type="button" variant="tertiary" onClick={() => setReportOpen(false)}>Cancel</Button>
-                    <Button type="submit" variant="destructive">Submit report</Button>
+                    <Button type="button" variant="tertiary" onClick={() => setReportOpen(false)}>{t('campaign.cancel')}</Button>
+                    <Button type="submit" variant="destructive">{t('campaign.submitReport')}</Button>
                   </div>
                 </form>
               </>

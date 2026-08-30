@@ -4,10 +4,12 @@ import Comment from '../models/Comment.js';
 import Donation from '../models/Donation.js';
 import Follow from '../models/Follow.js';
 import Bookmark from '../models/Bookmark.js';
+import CampaignMember from '../models/CampaignMember.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
-import { submitCampaign, canEditCampaign, isCampaignContributor, PUBLIC_STATUSES } from '../services/campaignService.js';
+import { submitCampaign, canEditCampaign, isCampaignContributor, assertTransitionAllowed, PUBLIC_STATUSES, EDIT_RETURNS_TO_REVIEW_STATUSES } from '../services/campaignService.js';
 import { notifyUser } from '../services/notificationService.js';
+import { logAudit } from '../services/auditLogService.js';
 
 // Real, derivable platform numbers only — never fabricate stats for the
 // landing page (Design_Rules.md Rule 43).
@@ -43,8 +45,24 @@ export const listCampaigns = asyncHandler(async (req, res) => {
   res.json({ items, total, page: Number(page), limit: Number(limit) });
 });
 
+// "My campaigns" means campaigns this user owns, PLUS campaigns where they
+// hold an accepted CampaignMember (co-organizer) row — never campaigns they
+// merely have some global role in common with. Each item is tagged with
+// `access` so the UI can show "Owner" vs "Co-organizer" (never blur the two).
 export const listMyCampaigns = asyncHandler(async (req, res) => {
-  const campaigns = await Campaign.find({ organizerId: req.user.id }).sort({ createdAt: -1 });
+  const memberships = await CampaignMember.find({ userId: req.user.id, status: 'accepted' }).select('campaignId');
+  const coOrganizedIds = memberships.map((m) => m.campaignId);
+
+  const [owned, coOrganized] = await Promise.all([
+    Campaign.find({ organizerId: req.user.id }).sort({ createdAt: -1 }),
+    coOrganizedIds.length ? Campaign.find({ _id: { $in: coOrganizedIds } }).sort({ createdAt: -1 }) : [],
+  ]);
+
+  const campaigns = [
+    ...owned.map((c) => ({ ...c.toObject(), access: 'owner' })),
+    ...coOrganized.map((c) => ({ ...c.toObject(), access: 'co-organizer' })),
+  ];
+
   res.json(campaigns);
 });
 
@@ -58,8 +76,12 @@ export const getCampaign = asyncHandler(async (req, res) => {
   if (!campaign) throw new ApiError(404, 'NOT_FOUND', 'Campaign not found or unavailable');
 
   const isPublic = PUBLIC_STATUSES.includes(campaign.status);
-  const isOwner = req.user && String(campaign.organizerId) === String(req.user.id);
-  if (!isPublic && !isOwner) {
+  // Non-public campaigns (draft/under_review/rejected/etc.) are visible to
+  // the owner and to accepted co-organizers — a campaign-scoped check, never
+  // a global role check (an unrelated co-organizer on a different campaign,
+  // or any other "organizer" user, must still get 404 here).
+  const isContributor = req.user && (await isCampaignContributor(campaign, req.user.id));
+  if (!isPublic && !isContributor) {
     throw new ApiError(404, 'NOT_FOUND', 'Campaign not found or unavailable');
   }
 
@@ -73,8 +95,85 @@ export const updateCampaign = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'FORBIDDEN', 'Campaign cannot be edited in its current status');
   }
 
+  // Editing a campaign that's already been reviewed changes the reviewed
+  // content, so it goes back through moderation rather than silently keeping
+  // its approved/published/active status (Design_Rules.md Rule 18 — trust).
+  const returnsToReview = EDIT_RETURNS_TO_REVIEW_STATUSES.includes(campaign.status);
+
   Object.assign(campaign, req.body);
+  if (returnsToReview) campaign.status = 'under_review';
   await campaign.save();
+
+  if (returnsToReview) {
+    await logAudit({
+      actorId: req.user.id,
+      actorType: 'organizer',
+      action: 'campaign.edited_returned_to_review',
+      targetType: 'Campaign',
+      targetId: campaign._id,
+    });
+    await notifyUser({
+      userId: campaign.organizerId,
+      type: 'campaign_status_change',
+      title: 'Campaign returned to review',
+      body: `"${campaign.title?.en || campaign.title?.so}" was updated and is now awaiting re-review before donors can see the changes.`,
+      targetUrl: '/organizer',
+    });
+  }
+
+  res.json(campaign);
+});
+
+// Deleting is only offered for 'draft' campaigns (never public, never
+// donated to) — owner-only, matching Design_Rules.md Rule 10 (ownership
+// actions stay owner-only, never available to a co-organizer).
+export const deleteCampaign = asyncHandler(async (req, res) => {
+  const campaign = await Campaign.findById(req.params.id);
+  if (!campaign) throw new ApiError(404, 'NOT_FOUND', 'Campaign not found');
+  if (String(campaign.organizerId) !== String(req.user.id)) {
+    throw new ApiError(403, 'FORBIDDEN', 'Only the campaign owner can delete this campaign');
+  }
+  if (campaign.status !== 'draft') {
+    throw new ApiError(400, 'INVALID_TRANSITION', 'Only draft campaigns can be deleted — cancel a submitted campaign instead.');
+  }
+
+  await Campaign.deleteOne({ _id: campaign._id });
+  await logAudit({
+    actorId: req.user.id,
+    actorType: 'organizer',
+    action: 'campaign.deleted',
+    targetType: 'Campaign',
+    targetId: campaign._id,
+  });
+
+  res.json({ deleted: true });
+});
+
+// Cancelling is the destructive action for a campaign that's already been
+// submitted but not yet live — the TRANSITIONS map in campaignService only
+// allows 'cancelled' from 'draft'/'submitted', so a published/active
+// campaign can't be self-cancelled here (matches real fundraising platforms:
+// once money is flowing, stopping it goes through a moderator, not a
+// one-click organizer action). Owner-only, same as delete.
+export const cancelCampaign = asyncHandler(async (req, res) => {
+  const campaign = await Campaign.findById(req.params.id);
+  if (!campaign) throw new ApiError(404, 'NOT_FOUND', 'Campaign not found');
+  if (String(campaign.organizerId) !== String(req.user.id)) {
+    throw new ApiError(403, 'FORBIDDEN', 'Only the campaign owner can cancel this campaign');
+  }
+
+  assertTransitionAllowed(campaign.status, 'cancelled');
+  campaign.status = 'cancelled';
+  await campaign.save();
+
+  await logAudit({
+    actorId: req.user.id,
+    actorType: 'organizer',
+    action: 'campaign.cancelled',
+    targetType: 'Campaign',
+    targetId: campaign._id,
+  });
+
   res.json(campaign);
 });
 

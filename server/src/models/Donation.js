@@ -4,7 +4,7 @@ const donationSchema = new mongoose.Schema(
   {
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true, index: true },
     donorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, sparse: true },
-    amount: { type: Number, required: true, min: 1 },
+    amount: { type: Number, required: true, min: 0.01 },
     currency: { type: String, default: 'USD' },
     isAnonymous: { type: Boolean, default: false },
     message: { type: String },

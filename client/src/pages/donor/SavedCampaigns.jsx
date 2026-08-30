@@ -5,9 +5,11 @@ import CampaignCard from '../../components/CampaignCard';
 import EmptyState from '../../components/EmptyState';
 import Button from '../../components/Button';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 import { DONOR_NAV } from './nav';
 
 export default function SavedCampaigns() {
+  const { t } = useLanguage();
   const [campaigns, setCampaigns] = useState([]);
   const [status, setStatus] = useState('loading');
 
@@ -22,9 +24,9 @@ export default function SavedCampaigns() {
   }, []);
 
   return (
-    <DashboardLayout title="My account" nav={DONOR_NAV}>
+    <DashboardLayout title={t('donor.myAccount')} nav={DONOR_NAV}>
       <div className="flex flex-col gap-xl">
-        <h1 className="text-[24px] font-bold text-text-primary">Saved campaigns</h1>
+        <h1 className="text-[24px] font-bold text-text-primary">{t('donor.savedCampaigns')}</h1>
 
         {status === 'loading' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
@@ -33,15 +35,15 @@ export default function SavedCampaigns() {
         )}
 
         {status === 'error' && (
-          <EmptyState icon="wifi_off" title="Couldn't load saved campaigns" description="Please check your connection and try again." />
+          <EmptyState icon="wifi_off" title={t('donor.loadSavedErrorTitle')} description={t('common.checkConnection')} />
         )}
 
         {status === 'ready' && campaigns.length === 0 && (
           <EmptyState
             icon="bookmark"
-            title="No saved campaigns yet"
-            description="Tap the bookmark icon on a campaign to save it here for later."
-            action={<Link to="/explore"><Button variant="secondary">Explore campaigns</Button></Link>}
+            title={t('donor.noSavedTitle')}
+            description={t('donor.noSavedDesc')}
+            action={<Link to="/explore"><Button variant="secondary">{t('donor.exploreCampaigns')}</Button></Link>}
           />
         )}
 

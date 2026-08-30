@@ -8,10 +8,11 @@
 
 import { ApiError } from '../../utils/ApiError.js';
 import { manualProvider } from './ManualProvider.js';
+import { waafiPayProvider } from './WaafiPayProvider.js';
 
 const providers = {
   manual: manualProvider,
-  // mobile_money: TODO — verify EVC Plus / eDahab / Zaad API availability before implementing
+  evc_plus: waafiPayProvider, // EVC Plus (Hormuud) via WaafiPay
   // bank: TODO — verify local bank transfer/collection API availability before implementing
   // card: TODO — verify an international card processor with Somalia reach before implementing
 };
@@ -30,6 +31,12 @@ export const PaymentService = {
   },
   confirmPayment(providerName, params) {
     return getProvider(providerName).confirmPayment(params);
+  },
+  // Provider-agnostic entry point: creates the payment and resolves it to a
+  // final status in one call. 'manual' auto-confirms; 'evc_plus' performs a
+  // real synchronous USSD-push charge.
+  charge(providerName, params) {
+    return getProvider(providerName).charge(params);
   },
   handleWebhook(providerName, payload, signature) {
     return getProvider(providerName).handleWebhook(payload, signature);

@@ -1,14 +1,23 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PageLayout from '../../components/PageLayout';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Register() {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '' });
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '';
+  const [form, setForm] = useState({
+    fullName: '',
+    email: searchParams.get('email') || '',
+    phone: '',
+    password: '',
+  });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,7 +27,7 @@ export default function Register() {
     setError(null);
     try {
       await register(form);
-      navigate('/check-email');
+      navigate(`/check-email${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,20 +40,20 @@ export default function Register() {
       <div className="flex items-center justify-center px-xl py-4xl min-h-[80vh]">
         <div className="w-full max-w-[440px] bg-surface border border-border rounded-lg p-2xl">
           <div className="text-center mb-xl">
-            <h1 className="text-[24px] font-bold text-text-primary mb-xs">Create your account</h1>
-            <p className="text-[14px] text-text-secondary">Join Kaalmo to donate or start a fundraiser.</p>
+            <h1 className="text-[24px] font-bold text-text-primary mb-xs">{t('register.title')}</h1>
+            <p className="text-[14px] text-text-secondary">{t('register.subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
             <Input
-              label="Full name"
+              label={t('register.fullName')}
               id="fullName"
               required
               value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
             />
             <Input
-              label="Email address"
+              label={t('login.email')}
               id="email"
               type="email"
               required
@@ -52,7 +61,7 @@ export default function Register() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
             <Input
-              label="Phone number"
+              label={t('register.phone')}
               id="phone"
               type="tel"
               placeholder="+252 6XX XXX XXX"
@@ -61,7 +70,7 @@ export default function Register() {
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
             <Input
-              label="Password"
+              label={t('login.password')}
               id="password"
               type="password"
               required
@@ -75,13 +84,13 @@ export default function Register() {
             )}
 
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? 'Creating account…' : 'Create account'}
+              {submitting ? t('register.creating') : t('register.createAccount')}
             </Button>
           </form>
 
           <p className="text-center text-[13px] text-text-secondary mt-xl">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary hover:underline">Log in</Link>
+            {t('register.haveAccount')}{' '}
+            <Link to="/login" className="text-primary hover:underline">{t('login.logIn')}</Link>
           </p>
         </div>
       </div>

@@ -4,11 +4,14 @@ import PageLayout from '../../components/PageLayout';
 import CampaignCard from '../../components/CampaignCard';
 import EmptyState from '../../components/EmptyState';
 import api from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
+import { categoryLabel, regionLabel } from '../../i18n/translations';
 
 const CATEGORIES = ['Medical', 'Education', 'Emergency', 'Family', 'Funeral', 'Community', 'Mosque', 'School', 'Orphan Support', 'Disaster Relief', 'Business/Startup', 'NGO', 'Public Projects'];
 const REGIONS = ['Mogadishu', 'Hargeisa', 'Puntland', 'Nairobi'];
 
 export default function Explore() {
+  const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,8 +28,9 @@ export default function Explore() {
     api
       .get('/campaigns', { params: { category: category || undefined, region: region || undefined, q: q || undefined, limit: 30 } })
       .then(({ data }) => setCampaigns(data.items))
-      .catch(() => setError('We could not load campaigns right now. Please check your connection and try again.'))
+      .catch(() => setError(t('explore.loadError')))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, region, q]);
 
   function updateFilter(key, value) {
@@ -37,12 +41,12 @@ export default function Explore() {
   }
 
   const categoryOptions = [
-    { value: '', label: 'All categories' },
-    ...CATEGORIES.map((c) => ({ value: c, label: c })),
+    { value: '', label: t('explore.allCategories') },
+    ...CATEGORIES.map((c) => ({ value: c, label: categoryLabel(c, language) })),
   ];
   const regionOptions = [
-    { value: '', label: 'All regions' },
-    ...REGIONS.map((r) => ({ value: r, label: r })),
+    { value: '', label: t('explore.allRegions') },
+    ...REGIONS.map((r) => ({ value: r, label: regionLabel(r, language) })),
   ];
 
   return (
@@ -51,7 +55,7 @@ export default function Explore() {
         {/* Desktop/tablet filter panel — always visible in the sidebar */}
         <aside className="hidden md:flex w-64 flex-shrink-0 flex-col gap-lg">
           <div className="bg-surface rounded-lg border border-border p-lg">
-            <h3 className="text-[15px] font-semibold text-text-primary mb-md">Category</h3>
+            <h3 className="text-[15px] font-semibold text-text-primary mb-md">{t('explore.category')}</h3>
             <div className="flex flex-col gap-sm max-h-64 overflow-y-auto">
               {categoryOptions.map((c) => (
                 <label key={c.value} className="flex items-center gap-sm text-[14px] text-text-secondary cursor-pointer">
@@ -69,7 +73,7 @@ export default function Explore() {
           </div>
 
           <div className="bg-surface rounded-lg border border-border p-lg">
-            <h3 className="text-[15px] font-semibold text-text-primary mb-md">Region</h3>
+            <h3 className="text-[15px] font-semibold text-text-primary mb-md">{t('explore.region')}</h3>
             <div className="flex flex-col gap-sm">
               {regionOptions.map((r) => (
                 <label key={r.value} className="flex items-center gap-sm text-[14px] text-text-secondary cursor-pointer">
@@ -89,7 +93,7 @@ export default function Explore() {
 
         <div className="flex-grow flex flex-col gap-lg">
           <div className="flex flex-col gap-md">
-            <h1 className="text-[28px] font-bold text-text-primary">Explore campaigns</h1>
+            <h1 className="text-[28px] font-bold text-text-primary">{t('explore.title')}</h1>
             <div className="relative max-w-xl">
               <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-text-secondary">
                 search
@@ -98,7 +102,7 @@ export default function Explore() {
                 defaultValue={q}
                 onKeyDown={(e) => e.key === 'Enter' && updateFilter('q', e.target.value)}
                 onBlur={(e) => updateFilter('q', e.target.value)}
-                placeholder="Search campaigns, causes, or communities"
+                placeholder={t('explore.searchPlaceholder')}
                 className="w-full pl-4xl pr-lg py-sm h-[44px] rounded border border-border bg-surface text-text-primary outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -116,7 +120,7 @@ export default function Explore() {
                   <span className="material-symbols-outlined text-text-secondary" style={{ fontSize: 20 }}>
                     category
                   </span>
-                  <span className="truncate">{category || 'Category'}</span>
+                  <span className="truncate">{category ? categoryLabel(category, language) : t('explore.category')}</span>
                 </span>
                 <span className="material-symbols-outlined text-text-secondary" style={{ fontSize: 20 }}>
                   expand_more
@@ -131,7 +135,7 @@ export default function Explore() {
                   <span className="material-symbols-outlined text-text-secondary" style={{ fontSize: 20 }}>
                     location_on
                   </span>
-                  <span className="truncate">{region || 'Region'}</span>
+                  <span className="truncate">{region ? regionLabel(region, language) : t('explore.region')}</span>
                 </span>
                 <span className="material-symbols-outlined text-text-secondary" style={{ fontSize: 20 }}>
                   expand_more
@@ -147,12 +151,12 @@ export default function Explore() {
               ))}
             </div>
           ) : error ? (
-            <EmptyState icon="wifi_off" title="Couldn't load campaigns" description={error} />
+            <EmptyState icon="wifi_off" title={t('explore.errorTitle')} description={error} />
           ) : campaigns.length === 0 ? (
             <EmptyState
               icon="search_off"
-              title="No campaigns match these filters"
-              description="Try a different category or region, or clear your search."
+              title={t('explore.emptyTitle')}
+              description={t('explore.emptyDescription')}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
@@ -176,7 +180,7 @@ export default function Explore() {
           <div className="relative bg-surface rounded-t-lg border-t border-border max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between px-lg py-md border-b border-border">
               <h3 className="text-[16px] font-semibold text-text-primary">
-                {openFilter === 'category' ? 'Category' : 'Region'}
+                {openFilter === 'category' ? t('explore.category') : t('explore.region')}
               </h3>
               <button type="button" onClick={() => setOpenFilter(null)} className="p-sm -mr-sm text-text-secondary">
                 <span className="material-symbols-outlined">close</span>

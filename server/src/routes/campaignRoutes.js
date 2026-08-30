@@ -18,10 +18,15 @@ const router = Router();
 
 router.get('/', campaignController.listCampaigns);
 router.get('/stats', campaignController.getPublicStats);
-router.get('/mine', requireAuth, requireRole('organizer', 'admin'), campaignController.listMyCampaigns);
+// No global role gate — a co-organizer (global role stays whatever it was)
+// must be able to see campaigns they were invited to. The controller itself
+// scopes the result to req.user.id (owned + accepted co-organizer rows only).
+router.get('/mine', requireAuth, campaignController.listMyCampaigns);
 router.post('/', requireAuth, requireRole('organizer', 'admin'), validate(createCampaignSchema), campaignController.createCampaign);
 router.get('/:id', optionalAuth, campaignController.getCampaign);
 router.patch('/:id', requireAuth, validate(updateCampaignSchema), campaignController.updateCampaign);
+router.delete('/:id', requireAuth, campaignController.deleteCampaign);
+router.post('/:id/cancel', requireAuth, campaignController.cancelCampaign);
 router.post('/:id/submit', requireAuth, campaignController.submitCampaignForReview);
 
 router.get('/:id/updates', campaignController.listUpdates);

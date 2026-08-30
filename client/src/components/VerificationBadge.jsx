@@ -1,13 +1,16 @@
+import { useLanguage } from '../context/LanguageContext';
+
 const LABELS = {
-  identity_verified: { label: 'Identity Verified', icon: 'verified' },
-  beneficiary_verified: { label: 'Beneficiary Verified', icon: 'gpp_good' },
-  payment_verified: { label: 'Payment Verified', icon: 'payments' },
-  organization_verified: { label: 'Organization Verified', icon: 'domain_verification' },
+  identity_verified: { icon: 'verified', so: 'Aqoonsi la xaqiijiyay', en: 'Identity Verified' },
+  beneficiary_verified: { icon: 'gpp_good', so: 'Faa\'iidaystaha la xaqiijiyay', en: 'Beneficiary Verified' },
+  payment_verified: { icon: 'payments', so: 'Lacag-bixin la xaqiijiyay', en: 'Payment Verified' },
+  organization_verified: { icon: 'domain_verification', so: 'Hay\'ad la xaqiijiyay', en: 'Organization Verified' },
 };
 
 // Trust signals must stay visible, not decorative — never imply a guarantee
 // that everything about a campaign is true (Design_Rules.md Rule 18).
 export default function VerificationBadge({ type, compact = false }) {
+  const { language } = useLanguage();
   const meta = LABELS[type];
   if (!meta) return null;
 
@@ -20,7 +23,7 @@ export default function VerificationBadge({ type, compact = false }) {
       <span className="material-symbols-outlined text-success" style={{ fontSize: compact ? 14 : 16 }}>
         {meta.icon}
       </span>
-      {meta.label}
+      {meta[language] || meta.so}
     </span>
   );
 }
