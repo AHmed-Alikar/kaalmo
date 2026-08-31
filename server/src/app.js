@@ -17,6 +17,8 @@ import reportRoutes from './routes/reportRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import campaignInviteRoutes from './routes/campaignInviteRoutes.js';
 import supportTicketRoutes from './routes/supportTicketRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import deviceRoutes from './routes/deviceRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { UPLOAD_DIR } from './middleware/upload.js';
 
@@ -52,6 +54,8 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/campaign-invites', campaignInviteRoutes);
 app.use('/api/v1/support-tickets', supportTicketRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/devices', deviceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

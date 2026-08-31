@@ -4,12 +4,10 @@
 // PIN (or the request times out) — the response tells us success/failure
 // synchronously, so there is no separate "confirm" step or webhook to wait on.
 
-import https from 'node:https';
 import Payment from '../../models/Payment.js';
 import PaymentTransaction from '../../models/PaymentTransaction.js';
 import { ApiError } from '../../utils/ApiError.js';
-
-const REQUEST_TIMEOUT_MS = 30_000;
+import { callWaafiPay } from './waafiPayClient.js';
 
 // Somali mobile numbers are accepted in any common local shape
 // (0616123456, 616123456, +252616123456) and normalized to 252XXXXXXXXX,
@@ -20,62 +18,6 @@ export function normalizeSomaliPhone(raw) {
   if (digits.startsWith('0') && digits.length === 10) return `252${digits.slice(1)}`;
   if (digits.length === 9) return `252${digits}`;
   return null;
-}
-
-// Node's built-in fetch() (undici) hangs indefinitely against WaafiPay's
-// endpoint in this environment despite curl/https.request working fine —
-// using the plain https module here sidesteps that.
-function callWaafiPay(serviceName, serviceParams) {
-  const baseUrl = process.env.WAAFIPAY_BASE_URL;
-  if (!baseUrl || !process.env.WAAFIPAY_API_KEY) {
-    return Promise.reject(new ApiError(501, 'PROVIDER_NOT_IMPLEMENTED', 'EVC Plus is not configured yet'));
-  }
-
-  const body = JSON.stringify({
-    schemaVersion: '1.0',
-    requestId: String(Date.now()) + Math.floor(Math.random() * 1000),
-    timestamp: new Date().toISOString(),
-    channelName: 'WEB',
-    serviceName,
-    serviceParams: {
-      merchantUid: process.env.WAAFIPAY_MERCHANT_UID,
-      apiUserId: process.env.WAAFIPAY_API_USER_ID,
-      apiKey: process.env.WAAFIPAY_API_KEY,
-      ...serviceParams,
-    },
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request(
-      baseUrl,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-      },
-      (res) => {
-        let raw = '';
-        res.on('data', (chunk) => { raw += chunk; });
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(raw));
-          } catch {
-            reject(new ApiError(502, 'PAYMENT_GATEWAY_ERROR', 'EVC Plus returned an unexpected response. Please try again.'));
-          }
-        });
-      }
-    );
-
-    req.on('error', () => {
-      reject(new ApiError(502, 'PAYMENT_GATEWAY_ERROR', 'Could not reach EVC Plus right now. Please try again.'));
-    });
-    req.setTimeout(REQUEST_TIMEOUT_MS, () => {
-      req.destroy();
-      reject(new ApiError(504, 'PAYMENT_TIMEOUT', 'EVC Plus did not respond in time. Please try again.'));
-    });
-
-    req.write(body);
-    req.end();
-  });
 }
 
 export const waafiPayProvider = {

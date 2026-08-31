@@ -34,6 +34,14 @@ export async function sendVerificationEmail(user, code) {
   });
 }
 
+export async function sendPasswordResetEmail(user, code) {
+  return sendEmail({
+    to: user.email,
+    subject: `${code} waa lambarkaaga dib-u-dejinta furaha sirta ah — Kaalmo`,
+    html: `<p>Salaan ${user.fullName},</p><p>Waxaa la codsaday in furaha sirta ah ee akoonkaaga Kaalmo dib loo dejiyo. Lambarkan geli bogga si aad u dhigato fure cusub:</p><p style="font-size:32px;font-weight:bold;letter-spacing:8px;">${code}</p><p>Lambarkani wuxuu dhacayaa 15 daqiiqo gudahood. Haddii aanad codsan dib-u-dejintan, iska indha tir email-kan — furahaaga sirta ah wax isma beddeli doonaan.</p>`,
+  });
+}
+
 // Routes a non-user to register (email prefilled) and an existing user to
 // log in — both land back on /organizer/invites afterward to accept.
 export async function sendTeamInviteEmail({ inviteEmail, inviterName, campaignTitle, hasAccount }) {

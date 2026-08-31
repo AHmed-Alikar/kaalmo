@@ -13,6 +13,7 @@ import {
   createCommentSchema,
 } from '../validators/campaignValidators.js';
 import { inviteMemberSchema } from '../validators/campaignMemberValidators.js';
+import { createDonationSchema } from '../validators/donationValidators.js';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.post('/:id/updates', requireAuth, validate(createUpdateSchema), campaignC
 router.get('/:id/comments', campaignController.listComments);
 router.post('/:id/comments', requireAuth, validate(createCommentSchema), campaignController.postComment);
 
-router.post('/:id/donate', optionalAuth, donationRateLimiter, donationController.createDonation);
+router.post('/:id/donate', optionalAuth, donationRateLimiter, validate(createDonationSchema), donationController.createDonation);
 router.get('/:id/donations', campaignController.listCampaignDonations);
 
 router.get('/:id/interactions', requireAuth, campaignController.getMyCampaignInteractions);

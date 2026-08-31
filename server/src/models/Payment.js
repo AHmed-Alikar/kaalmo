@@ -15,6 +15,11 @@ const paymentSchema = new mongoose.Schema(
       enum: ['created', 'pending', 'confirmed', 'failed', 'refunded'],
       default: 'created',
     },
+    // Caller-supplied key (from the `Idempotency-Key` header on the donate
+    // request). Lets a retried donation return the original result instead of
+    // charging again. sparse so pre-existing / provider-initiated payments
+    // without a key are unaffected.
+    idempotencyKey: { type: String, index: true, sparse: true },
   },
   { timestamps: true }
 );

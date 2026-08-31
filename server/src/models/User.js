@@ -16,6 +16,12 @@ const userSchema = new mongoose.Schema(
     phoneVerified: { type: Boolean, default: false },
     identityVerified: { type: Boolean, default: false },
     status: { type: String, enum: ['active', 'suspended', 'banned'], default: 'active' },
+    // Set whenever the password changes (e.g. password reset). Refresh tokens
+    // issued before this moment are rejected in authService.refresh().
+    passwordChangedAt: { type: Date },
+    // Master switch for push (FCM) delivery. In-app notifications are always
+    // stored regardless.
+    pushEnabled: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG BUILDS ONLY. Referenced from android/app/src/debug/AndroidManifest.xml,
+  so it is never merged into release/production builds — those keep Android's
+  default "cleartext denied" policy.
+
+  Permits plain HTTP to the local dev backend only:
+    - localhost / 127.0.0.1 : used with `adb reverse tcp:5000 tcp:5000`
+    - 10.0.2.2              : Android emulator alias for the host loopback
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

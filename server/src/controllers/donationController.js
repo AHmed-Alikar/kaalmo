@@ -1,5 +1,6 @@
 import Campaign from '../models/Campaign.js';
 import Donation from '../models/Donation.js';
+import Payment from '../models/Payment.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { PaymentService } from '../integrations/payments/PaymentService.js';
@@ -7,7 +8,15 @@ import { PUBLIC_STATUSES, recomputeRaisedAmount } from '../services/campaignServ
 import { logAudit } from '../services/auditLogService.js';
 import { notifyUser } from '../services/notificationService.js';
 
-const SUPPORTED_PROVIDERS = ['manual', 'evc_plus'];
+// Shape returned both for a fresh donation and for an idempotent replay.
+function donationResult(donation, raisedAmount) {
+  return {
+    donation,
+    payment: { paymentId: donation.paymentId, status: 'confirmed' },
+    raisedAmount,
+    note: 'Donation confirmed.',
+  };
+}
 
 // Donations never wait on admin approval — 'manual' auto-confirms and
 // 'evc_plus' (EVC Plus via WaafiPay) charges the donor's mobile money account
@@ -21,15 +30,27 @@ export const createDonation = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'CAMPAIGN_NOT_OPEN', 'This campaign is not currently open for donations');
   }
 
-  const { amount, isAnonymous, message, provider = 'manual', phone } = req.body;
-  if (!amount || amount <= 0) {
-    throw new ApiError(400, 'VALIDATION_ERROR', 'Donation amount must be greater than zero', { amount: 'required' });
-  }
-  if (!SUPPORTED_PROVIDERS.includes(provider)) {
-    throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported payment method', { provider: 'invalid' });
-  }
+  // amount / provider / message / isAnonymous are validated by createDonationSchema.
+  const { amount, isAnonymous, message, provider, phone } = req.body;
   if (provider === 'evc_plus' && !phone) {
     throw new ApiError(400, 'VALIDATION_ERROR', 'Enter the phone number to charge for EVC Plus', { phone: 'required' });
+  }
+
+  // Idempotency — a retried request (same `Idempotency-Key`) must not charge
+  // twice. Scope the key to the caller so one client can't observe another's.
+  const rawKey = req.get('Idempotency-Key');
+  const idempotencyKey = rawKey ? `${req.user?.id || 'guest'}:${rawKey.trim()}`.slice(0, 200) : null;
+  if (idempotencyKey) {
+    const existingPayment = await Payment.findOne({ idempotencyKey, campaignId: campaign._id });
+    if (existingPayment) {
+      const existingDonation = await Donation.findOne({ paymentId: existingPayment._id });
+      if (existingDonation) {
+        const raisedAmount = await recomputeRaisedAmount(campaign._id);
+        return res.status(201).json(donationResult(existingDonation, raisedAmount));
+      }
+      // Payment recorded but no donation (previous attempt failed/declined) —
+      // let it fall through and try again with a fresh payment.
+    }
   }
 
   const campaignTitle = campaign.title?.en || campaign.title?.so || 'a Kaalmo campaign';
@@ -41,6 +62,10 @@ export const createDonation = asyncHandler(async (req, res) => {
     phone,
     description: `Donation to ${campaignTitle}`,
   });
+
+  if (idempotencyKey) {
+    await Payment.updateOne({ _id: paymentId }, { idempotencyKey });
+  }
 
   const donation = await Donation.create({
     campaignId: campaign._id,
@@ -58,6 +83,7 @@ export const createDonation = asyncHandler(async (req, res) => {
 
   await logAudit({
     actorId: req.user?.id,
+    actorType: req.user?.id ? 'user' : 'system',
     action: 'payment.confirmed',
     targetType: 'Donation',
     targetId: donation._id,
@@ -74,12 +100,7 @@ export const createDonation = asyncHandler(async (req, res) => {
     });
   }
 
-  res.status(201).json({
-    donation,
-    payment: { paymentId, status: 'confirmed' },
-    raisedAmount,
-    note: 'Donation confirmed.',
-  });
+  res.status(201).json(donationResult(donation, raisedAmount));
 });
 
 export const listMyDonations = asyncHandler(async (req, res) => {

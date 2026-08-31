@@ -16,11 +16,12 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const updateMe = asyncHandler(async (req, res) => {
-  const allowedFields = ['fullName', 'language'];
+  const allowedFields = ['fullName', 'language', 'pushEnabled'];
   const updates = {};
   for (const field of allowedFields) {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   }
+  if (updates.pushEnabled !== undefined) updates.pushEnabled = !!updates.pushEnabled;
 
   const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true });
   if (!user) throw new ApiError(404, 'NOT_FOUND', 'User not found');

@@ -4,9 +4,17 @@ import User from '../models/User.js';
 import Verification from '../models/Verification.js';
 import { ApiError } from '../utils/ApiError.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
-import { sendVerificationEmail, sendOrganizerConfirmationEmail } from './emailService.js';
+import { sendVerificationEmail, sendOrganizerConfirmationEmail, sendPasswordResetEmail } from './emailService.js';
+import { logAudit } from './auditLogService.js';
 
 const EMAIL_OTP_TTL_MS = 15 * 60 * 1000; // 15 minutes — email verification / organizer-request codes
+
+// Password reset — see Constitution Sec. 24 (short-lived, single-use) and Sec. 77/78.
+const RESET_OTP_TTL_MS = 15 * 60 * 1000; // reset code lifetime
+const RESET_MAX_ATTEMPTS = 5; // wrong-guess attempts per code before it is burned
+const RESET_MAX_PER_WINDOW = 3; // forgot-password requests per account per window
+const RESET_RESEND_WINDOW_MS = 15 * 60 * 1000;
+const BCRYPT_COST = 12; // matches register()
 
 function generateOtp() {
   return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
@@ -32,6 +40,7 @@ function toPublicUser(user) {
     phoneVerified: user.phoneVerified,
     identityVerified: user.identityVerified,
     status: user.status,
+    pushEnabled: user.pushEnabled,
   };
 }
 
@@ -95,6 +104,13 @@ export async function refresh({ refreshToken }) {
     throw new ApiError(401, 'INVALID_TOKEN', 'Refresh token is invalid or expired');
   }
 
+  // Any refresh token minted before the last password change is dead — this is
+  // how a password reset invalidates existing sessions (Constitution Sec. 24/25).
+  // JWT `iat` is second-resolution, so compare at the same granularity.
+  if (user.passwordChangedAt && payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
+    throw new ApiError(401, 'INVALID_TOKEN', 'Refresh token is invalid or expired');
+  }
+
   return issueTokens(user);
 }
 
@@ -154,6 +170,123 @@ export async function resendVerificationEmail(userId) {
   }
 
   return { sent: true };
+}
+
+// --- Password reset (Constitution Sec. 24) ---
+//
+// Two steps: forgotPassword() emails a 6-digit code; resetPassword() consumes
+// it. Security invariants:
+//  - The response NEVER reveals whether an email is registered (no enumeration).
+//  - The code is stored only as a bcrypt hash; the plaintext lives only in the
+//    email and the single request that verifies it. It is never logged.
+//  - 15-minute expiry, single-use, max 5 wrong guesses, one active code at a
+//    time, and a per-account request throttle on top of the IP rate limiter.
+//  - A successful reset stamps user.passwordChangedAt, which kills every
+//    previously issued refresh token (see refresh()).
+
+export async function forgotPassword({ email }) {
+  const user = await User.findOne({ email });
+
+  // Silent no-op for unknown or disabled accounts — same response, no email,
+  // no DB write. Suspended/banned users don't get to reset their way back in.
+  if (user && user.status === 'active') {
+    const windowStart = new Date(Date.now() - RESET_RESEND_WINDOW_MS);
+    const recentRequests = await Verification.countDocuments({
+      userId: user._id,
+      type: 'password_reset',
+      createdAt: { $gte: windowStart },
+    });
+
+    if (recentRequests < RESET_MAX_PER_WINDOW) {
+      // Invalidate (don't delete) any still-pending code so it still counts
+      // toward the throttle window above, and leaves a trail.
+      await Verification.updateMany(
+        { userId: user._id, type: 'password_reset', status: 'pending' },
+        { status: 'rejected' }
+      );
+
+      const code = generateOtp();
+      const tokenHash = await bcrypt.hash(code, BCRYPT_COST);
+      await Verification.create({
+        userId: user._id,
+        type: 'password_reset',
+        status: 'pending',
+        token: tokenHash,
+        attempts: 0,
+        expiresAt: new Date(Date.now() + RESET_OTP_TTL_MS),
+      });
+
+      const result = await sendPasswordResetEmail(user, code);
+      if (!result.delivered && !result.dev) {
+        // Don't change the response on a delivery failure — that would leak
+        // that the address exists. Make it visible in the logs only.
+        console.warn(`[authService] Password reset email failed to send for ${user.email}:`, result.error);
+      }
+
+      await logAudit({
+        actorId: user._id,
+        actorType: 'user',
+        action: 'auth.password_reset_requested',
+        targetType: 'User',
+        targetId: user._id,
+      });
+    }
+  }
+
+  return { sent: true };
+}
+
+export async function resetPassword({ email, code, password }) {
+  // One generic failure for every "can't use this code" case, so a caller
+  // can't tell an unknown email from a wrong/expired code.
+  const invalidCode = () =>
+    new ApiError(400, 'INVALID_CODE', 'This reset code is invalid or has expired. Please request a new one.');
+
+  const user = await User.findOne({ email });
+  if (!user) throw invalidCode();
+
+  const record = await Verification.findOne({
+    userId: user._id,
+    type: 'password_reset',
+    status: 'pending',
+  }).sort({ createdAt: -1 });
+
+  if (!record || record.expiresAt < new Date() || record.attempts >= RESET_MAX_ATTEMPTS) {
+    throw invalidCode();
+  }
+
+  const matches = await bcrypt.compare(code, record.token);
+  if (!matches) {
+    record.attempts += 1;
+    if (record.attempts >= RESET_MAX_ATTEMPTS) record.status = 'rejected';
+    await record.save();
+    throw invalidCode();
+  }
+
+  // Burn this code and any siblings.
+  record.status = 'approved';
+  await record.save();
+  await Verification.updateMany(
+    { userId: user._id, type: 'password_reset', status: 'pending', _id: { $ne: record._id } },
+    { status: 'rejected' }
+  );
+
+  user.passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  user.passwordChangedAt = new Date();
+  // Receiving the emailed code proves control of the address.
+  user.emailVerified = true;
+  await user.save();
+
+  await logAudit({
+    actorId: user._id,
+    actorType: 'user',
+    action: 'auth.password_reset_completed',
+    targetType: 'User',
+    targetId: user._id,
+  });
+
+  // Deliberately no tokens — the user re-authenticates with the new password.
+  return { reset: true };
 }
 
 // Becoming an organizer requires its own dedicated email confirmation — a

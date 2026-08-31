@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kaalmo primary — used to tint push notification icons. -->
+    <color name="kaalmo_notification_accent">#0B7189</color>
+</resources>
