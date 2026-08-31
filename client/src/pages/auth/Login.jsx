@@ -53,14 +53,21 @@ export default function Login() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
-            <Input
-              label={t('login.password')}
-              id="password"
-              type="password"
-              required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
+            <div>
+              <Input
+                label={t('login.password')}
+                id="password"
+                type="password"
+                required
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+              <div className="text-right mt-xs">
+                <Link to="/forgot-password" className="text-[13px] text-primary hover:underline">
+                  {t('login.forgotPassword')}
+                </Link>
+              </div>
+            </div>
 
             {error && (
               <p className="text-[13px] text-error bg-error/10 border border-error/30 rounded p-md">{error}</p>

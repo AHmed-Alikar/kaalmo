@@ -1,39 +1,26 @@
 import multer from 'multer';
 import path from 'path';
-import crypto from 'crypto';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { ApiError } from '../utils/ApiError.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Kept only so app.js can keep serving images uploaded before the Cloudinary
+// migration — new uploads no longer write here (see uploadController.js).
 export const UPLOAD_DIR = path.join(__dirname, '../../uploads');
 
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const ALLOWED_TYPES = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = ALLOWED_TYPES[file.mimetype] || path.extname(file.originalname);
-    cb(null, `${crypto.randomBytes(16).toString('hex')}${ext}`);
-  },
-});
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 function fileFilter(req, file, cb) {
-  if (!ALLOWED_TYPES[file.mimetype]) {
+  if (!ALLOWED_TYPES.has(file.mimetype)) {
     return cb(new ApiError(400, 'INVALID_FILE_TYPE', 'Only JPEG, PNG, or WebP images are allowed'));
   }
   cb(null, true);
 }
 
-// Local disk storage — the MVP fallback until S3/Cloudflare R2 is chosen and
-// configured (spec Section 6). Swapping the storage engine here is the only
-// change needed once real object storage is wired up.
+// Memory storage — the file buffer is streamed straight to Cloudinary in
+// uploadController and never touches disk (see cloudinaryService.js).
 export const uploadImage = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 }).single('image');

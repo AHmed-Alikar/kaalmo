@@ -78,10 +78,17 @@ export const waafiPayProvider = {
     await payment.save();
 
     if (!approved) {
-      // WaafiPay's responseMsg is a technical code (e.g. RCS_INSUFFICIENT_BALANCE) —
-      // never surface it raw to the donor (Design_Rules.md Rule 17/29).
-      const friendly = FAILURE_MESSAGES[data.responseMsg] || 'The payment was declined. Please try again or use a different method.';
-      throw new ApiError(402, 'PAYMENT_DECLINED', friendly, { providerMessage: data.responseMsg });
+      // WaafiPay's decline reason shows up in different shapes depending on the
+      // failure: a short code in responseMsg (e.g. RCS_USER_REJECTED), or a
+      // stable errorCode with a long localized sentence in responseMsg (e.g.
+      // E10205 for insufficient balance, seen verbatim as "Payment Failed
+      // (Haraaga xisaabtaadu kuguma filna...)"). Check both — never surface
+      // either raw to the donor (Design_Rules.md Rule 17/29).
+      const friendly =
+        FAILURE_MESSAGES[data.responseMsg] ||
+        FAILURE_MESSAGES[data.errorCode] ||
+        'The payment was declined. Please try again or use a different method.';
+      throw new ApiError(402, 'PAYMENT_DECLINED', friendly, { providerMessage: data.responseMsg, providerErrorCode: data.errorCode });
     }
 
     return { paymentId: payment._id, status: 'confirmed', transaction };
@@ -108,7 +115,12 @@ export const waafiPayProvider = {
 };
 
 const FAILURE_MESSAGES = {
+  // Keyed by responseMsg (short-code failures)
   RCS_INSUFFICIENT_BALANCE: 'Insufficient EVC Plus balance for this donation.',
   RCS_USER_REJECTED: 'The payment was cancelled on your phone.',
   RCS_TIMEOUT: 'You did not respond to the payment prompt in time. Please try again.',
+  // Keyed by errorCode (failures where responseMsg is a long localized
+  // sentence instead of a short code) — E10205 observed verbatim as
+  // "Payment Failed (Haraaga xisaabtaadu kuguma filna, haraagaagu waa: )".
+  E10205: 'Insufficient EVC Plus balance for this donation.',
 };
