@@ -33,7 +33,12 @@ export default function Explore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, region, q]);
 
-
+  function updateFilter(key, value) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setSearchParams(next);
+  }
 
   const categoryOptions = [
     { value: '', label: t('explore.allCategories') },
