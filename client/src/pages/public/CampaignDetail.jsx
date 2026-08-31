@@ -62,16 +62,7 @@ export default function CampaignDetail() {
     }
   }, [id, user]);
 
-  async function toggleFollow() {
-    if (!user) return navigate('/login', { state: { from: `/campaigns/${id}` } });
-    if (following) {
-      await api.delete(`/campaigns/${id}/follow`);
-      setFollowing(false);
-    } else {
-      await api.post(`/campaigns/${id}/follow`);
-      setFollowing(true);
-    }
-  }
+
 
   async function toggleSave() {
     if (!user) return navigate('/login', { state: { from: `/campaigns/${id}` } });
