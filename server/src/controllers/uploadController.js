@@ -1,10 +1,16 @@
 import { ApiError } from '../utils/ApiError.js';
+import { uploadBuffer } from '../services/cloudinaryService.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
-export function handleImageUpload(req, res, next) {
+export const handleImageUpload = asyncHandler(async (req, res, next) => {
   if (!req.file) {
     return next(new ApiError(400, 'VALIDATION_ERROR', 'No image file was provided', { image: 'required' }));
   }
 
-  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.status(201).json({ url });
-}
+  try {
+    const result = await uploadBuffer(req.file.buffer, { folder: 'kaalmo' });
+    res.status(201).json({ url: result.secure_url });
+  } catch (err) {
+    throw new ApiError(502, 'UPLOAD_FAILED', 'The image could not be uploaded. Please try again.', { cause: err.message });
+  }
+});
