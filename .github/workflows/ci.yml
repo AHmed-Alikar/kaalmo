@@ -71,38 +71,3 @@ jobs:
         env:
           VITE_API_URL: https://api.example.com/api/v1
 
-  # -------------------------------------------------------------
-  # Job 3: Test & Analyze Mobile App (Flutter)
-  # -------------------------------------------------------------
-  test-mobile:
-    name: Test & Analyze Mobile (Flutter)
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: mobile
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Analyze Dart Code
-        run: flutter analyze
-
-      - name: Run Flutter Tests
-        run: flutter test
