@@ -1,2 +1,5 @@
 design page frontend
 design_page_frontend
+node_modules/
+.env
+.env.*
