@@ -175,16 +175,26 @@ export const listBeneficiaries = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = {};
   if (status) filter.verificationStatus = status;
-  const beneficiaries = await Beneficiary.find(filter).sort({ createdAt: -1 }).populate('userId', 'fullName email');
+  // Default queue view: only records actually awaiting a decision.
+  if (!status) filter.verificationStatus = { $in: ['pending', 'needs_more_information'] };
+  const beneficiaries = await Beneficiary.find(filter)
+    .sort({ updatedAt: -1 })
+    .populate('userId', 'fullName email')
+    .populate('campaignId', 'title organizerId')
+    .populate('invitedBy', 'fullName email')
+    .populate('reviewedBy', 'fullName');
   res.json(beneficiaries);
 });
 
 export const reviewBeneficiary = asyncHandler(async (req, res) => {
-  const { status } = req.body; // 'verified' | 'rejected'
+  const { status, reviewNote } = req.body; // 'verified' | 'rejected' | 'needs_more_information'
   const beneficiary = await Beneficiary.findById(req.params.id);
   if (!beneficiary) throw new ApiError(404, 'NOT_FOUND', 'Beneficiary not found');
 
   beneficiary.verificationStatus = status;
+  beneficiary.reviewNote = status === 'verified' ? undefined : reviewNote;
+  beneficiary.reviewedBy = req.user.id;
+  beneficiary.reviewedAt = new Date();
   beneficiary.verifiedBy = req.user.id;
   beneficiary.verifiedAt = status === 'verified' ? new Date() : undefined;
   await beneficiary.save();
@@ -209,19 +219,37 @@ export const reviewBeneficiary = asyncHandler(async (req, res) => {
     action: `beneficiary.${status}`,
     targetType: 'Beneficiary',
     targetId: beneficiary._id,
-    metadata: { fullName: beneficiary.fullName },
+    metadata: { fullName: beneficiary.fullName, reviewNote: reviewNote || undefined },
   });
+
+  const BODIES = {
+    verified: `${beneficiary.fullName} has been verified. Linked campaigns now show the Beneficiary Verified badge.`,
+    rejected: `The verification for ${beneficiary.fullName} was not approved.${reviewNote ? ` Reason: ${reviewNote}` : ' Please review and resubmit.'}`,
+    needs_more_information: `More information is needed for ${beneficiary.fullName}'s verification.${reviewNote ? ` ${reviewNote}` : ''} Please update and resubmit.`,
+  };
+  const TITLES = {
+    verified: 'Beneficiary verified',
+    rejected: 'Beneficiary verification rejected',
+    needs_more_information: 'More information needed',
+  };
 
   if (beneficiary.userId) {
     await notifyUser({
       userId: beneficiary.userId,
       type: `beneficiary_${status}`,
-      title: status === 'verified' ? 'Beneficiary verified' : 'Beneficiary verification rejected',
-      body:
-        status === 'verified'
-          ? `${beneficiary.fullName} has been verified. Linked campaigns now show the Beneficiary Verified badge.`
-          : `The verification for ${beneficiary.fullName} was not approved. Please review and resubmit.`,
+      title: TITLES[status],
+      body: BODIES[status],
       targetUrl: '/verification',
+    });
+  }
+  // Keep the organizer who invited them in the loop.
+  if (beneficiary.invitedBy) {
+    await notifyUser({
+      userId: beneficiary.invitedBy,
+      type: `beneficiary_${status}`,
+      title: `Beneficiary ${status === 'verified' ? 'verified' : status === 'rejected' ? 'rejected' : 'needs more info'}`,
+      body: `The beneficiary you invited${beneficiary.fullName ? ` (${beneficiary.fullName})` : ''} is now: ${status.replace(/_/g, ' ')}.`,
+      targetUrl: beneficiary.campaignId ? `/campaigns/${beneficiary.campaignId}` : '/organizer',
     });
   }
 

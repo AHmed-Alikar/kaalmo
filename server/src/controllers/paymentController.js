@@ -11,6 +11,6 @@ export const getPaymentConfig = asyncHandler(async (req, res) => {
   res.json({
     providers,
     currency: 'USD',
-    minAmount: 1,
+    minAmount: 0.01,
   });
 });

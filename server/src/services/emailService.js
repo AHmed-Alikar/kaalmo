@@ -59,6 +59,25 @@ export async function sendTeamInviteEmail({ inviteEmail, inviterName, campaignTi
   });
 }
 
+// Beneficiary invitation. Routes a non-user to register (email prefilled) and
+// an existing user to log in — both land on /verification, where they see the
+// pending invitation, accept it, and submit their verification details. The
+// email never verifies anyone; an admin still reviews the submission.
+export async function sendBeneficiaryInviteEmail({ inviteEmail, inviterName, campaignTitle, hasAccount }) {
+  const clientOrigin = (process.env.CLIENT_ORIGIN || '').split(',')[0];
+  const redirect = encodeURIComponent('/verification');
+  const link = hasAccount
+    ? `${clientOrigin}/login?redirect=${redirect}`
+    : `${clientOrigin}/register?email=${encodeURIComponent(inviteEmail)}&redirect=${redirect}`;
+  const cta = hasAccount ? 'Gal si aad u aragto casuumaadda' : 'Iska diiwaan geli si aad u sii wadato';
+
+  return sendEmail({
+    to: inviteEmail,
+    subject: `${inviterName} ku magacaabay inaad ka faa'iidaysato "${campaignTitle}" — Kaalmo`,
+    html: `<p>Salaan,</p><p>${inviterName} wuxuu kugu magacaabay qofka ka faa'iidaysanaya (beneficiary) campaign-ka "${campaignTitle}" ee Kaalmo.</p><p>Fadlan <a href="${link}">${cta}</a>. Kadib waxaad:</p><ol><li>aqbali doontaa casuumaadda,</li><li>gudbin doontaa xogtaada xaqiijinta,</li><li>sugi doontaa in kooxda Kaalmo ay ansixiso.</li></ol><p>Aqbalitaanka casuumaadda kaligiis kuma dhigayo mid la xaqiijiyay — maamulaha ayaa dib u eegaya xogtaada.</p>`,
+  });
+}
+
 export async function sendOrganizerConfirmationEmail(user, code, purpose) {
   return sendEmail({
     to: user.email,

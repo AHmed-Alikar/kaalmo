@@ -57,6 +57,22 @@ class AuthRepository {
     return user;
   }
 
+  /// Step 1 of becoming an organizer — sends the email confirmation code.
+  Future<void> requestOrganizerAccess({String? fullName, String? purpose}) =>
+      _api.requestOrganizerAccess(fullName: fullName, purpose: purpose);
+
+  /// Step 2 — submits the code. The backend returns a fresh token pair that
+  /// carries the new `organizer` role; store it, then re-fetch the profile so
+  /// the app sees the updated roles.
+  Future<AuthUser> confirmOrganizerAccess(String code) async {
+    final pair = await _api.confirmOrganizerAccess(code);
+    await _store.writeTokens(
+      accessToken: pair.accessToken,
+      refreshToken: pair.refreshToken,
+    );
+    return refreshProfile();
+  }
+
   /// `PATCH /users/me` — updates the profile fields the backend allows and
   /// persists the returned user.
   Future<AuthUser> updateProfile({String? fullName, String? language, bool? pushEnabled}) async {

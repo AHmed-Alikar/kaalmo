@@ -25,7 +25,7 @@ import User from '../src/models/User.js';
 import DeviceToken from '../src/models/DeviceToken.js';
 import Notification from '../src/models/Notification.js';
 import AuditLog from '../src/models/AuditLog.js';
-import { sendToUser, isFcmConfigured } from '../src/services/fcmService.js';
+import { sendToUser, isFcmConfigured, normalizePrivateKey } from '../src/services/fcmService.js';
 import { notifyUser } from '../src/services/notificationService.js';
 
 const API = '/api/v1';
@@ -196,6 +196,10 @@ describe('notification dispatch', () => {
     expect(arg.tokens.sort()).toEqual(['dispatch-token-1', 'dispatch-token-2']);
     expect(arg.notification).toEqual({ title: 'Donation confirmed', body: 'Your donation of $50 has been confirmed.' });
     expect(arg.data).toEqual({ type: 'donation_confirmed', targetUrl: '/campaigns/abc' });
+    // Android must get a high-priority notification block on the app's channel
+    // so the system tray shows it while backgrounded / terminated.
+    expect(arg.android.priority).toBe('high');
+    expect(arg.android.notification).toMatchObject({ channelId: 'kaalmo_default', priority: 'high' });
     expect(result.sent).toBe(2);
   });
 
@@ -303,6 +307,20 @@ describe('credential safety', () => {
 
     logSpy.mockRestore();
     errSpy.mockRestore();
+  });
+
+  it('normalizePrivateKey accepts the shapes a service-account key arrives in', () => {
+    const BODY = 'AAAABBBBCCCCDDDD';
+    const pem = `-----BEGIN PRIVATE KEY-----\n${BODY}\n-----END PRIVATE KEY-----\n`;
+
+    // already-clean PEM is unchanged
+    expect(normalizePrivateKey(pem)).toBe(pem);
+    // \n escape sequences -> real newlines
+    expect(normalizePrivateKey(`-----BEGIN PRIVATE KEY-----\\n${BODY}\\n-----END PRIVATE KEY-----\\n`)).toBe(pem);
+    // stray/unbalanced surrounding quote (the real .env bug) + CRLF paste
+    expect(normalizePrivateKey(`"-----BEGIN PRIVATE KEY-----\\r\\n${BODY}\\r\\n-----END PRIVATE KEY-----\\n`)).toBe(pem);
+    // matched quote pair + missing trailing newline
+    expect(normalizePrivateKey(`'-----BEGIN PRIVATE KEY-----\\n${BODY}\\n-----END PRIVATE KEY-----'`)).toBe(pem);
   });
 
   it('does not expose pushEnabled changes or tokens through an unrelated endpoint', async () => {

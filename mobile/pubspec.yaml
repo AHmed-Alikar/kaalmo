@@ -57,6 +57,19 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  # Generates the Android/iOS launcher icons from the Kaalmo logo. Dev-only
+  # tool — not shipped in the app.
+  flutter_launcher_icons: ^0.14.1
+
+# Launcher icon = the Kaalmo logo (client/public/favicon.png, brought in as an
+# asset). Run: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/kaalmo_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/kaalmo_icon.png"
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

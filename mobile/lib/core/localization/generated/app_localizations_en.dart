@@ -300,7 +300,7 @@ class AppL10nEn extends AppL10n {
   String get homeGreetingGeneric => 'Welcome';
 
   @override
-  String get homeGreetingSubtitle => 'Find a cause worth supporting today.';
+  String get homeGreetingSubtitle => 'Find a cause worth supporting test.';
 
   @override
   String get homeSearchHint => 'Search campaigns';
@@ -1123,6 +1123,16 @@ class AppL10nEn extends AppL10n {
       'No beneficiary is linked to this campaign yet.';
 
   @override
+  String get organizerBeneficiaryEmailLabel => 'Beneficiary\'s email';
+
+  @override
+  String get organizerBeneficiarySend => 'Send invitation';
+
+  @override
+  String get organizerBeneficiarySent =>
+      'Invitation sent. They\'ll accept and complete verification.';
+
+  @override
   String get organizerTeam => 'Team';
 
   @override
@@ -1216,6 +1226,83 @@ class AppL10nEn extends AppL10n {
   String get organizerPublishUpdate => 'Publish update';
 
   @override
+  String get startFundraiserTitle => 'Start a fundraiser';
+
+  @override
+  String get organizerAccessTitle => 'Become an organizer';
+
+  @override
+  String get organizerAccessBody =>
+      'Organizers create and manage fundraising campaigns. We\'ll email you a 6-digit code to confirm — this is a one-time step and doesn\'t change how you donate.';
+
+  @override
+  String get organizerAccessConfirmTitle => 'Confirm by email';
+
+  @override
+  String get organizerAccessConfirmBody =>
+      'Enter the 6-digit code we sent to your email address.';
+
+  @override
+  String get organizerAccessFullName => 'Your full name';
+
+  @override
+  String get organizerAccessPurpose =>
+      'What will you raise funds for? (optional)';
+
+  @override
+  String get organizerAccessPurposeHint =>
+      'e.g. Medical treatment for my brother';
+
+  @override
+  String get organizerAccessSendCode => 'Send code';
+
+  @override
+  String get organizerAccessConfirm => 'Confirm & continue';
+
+  @override
+  String get organizerAccessResend => 'Resend code';
+
+  @override
+  String get organizerAccessResent => 'A new code is on its way.';
+
+  @override
+  String get organizerAccessChangeDetails => 'Change details';
+
+  @override
+  String get createCampaignTitle => 'Campaign details';
+
+  @override
+  String get createCampaignSubtitle =>
+      'Your campaign is saved as a draft. You can review it and submit it for approval afterwards.';
+
+  @override
+  String get createCampaignTitleHint => 'e.g. Help rebuild the Xamar clinic';
+
+  @override
+  String get createCampaignStoryHint =>
+      'Explain who this is for, what the funds will do, and why it matters.';
+
+  @override
+  String get createCampaignFieldEndDate => 'End date (optional)';
+
+  @override
+  String get createCampaignEndDatePick => 'Pick a date';
+
+  @override
+  String get createCampaignCoverNote =>
+      'You can add a cover photo later from the campaign page on the web.';
+
+  @override
+  String get createCampaignSubmit => 'Create campaign';
+
+  @override
+  String get createCampaignSuccess => 'Campaign created — saved as a draft.';
+
+  @override
+  String get coOrgBanner =>
+      'You\'re a co-organizer on this campaign. You can edit its content and post updates; the owner manages the team, beneficiary and withdrawals.';
+
+  @override
   String get beneficiaryDashboardTitle => 'Beneficiary';
 
   @override
@@ -1223,7 +1310,44 @@ class AppL10nEn extends AppL10n {
       'Couldn\'t load your beneficiary profile';
 
   @override
+  String get beneficiaryAccountBanner =>
+      'This is your beneficiary account — separate from organizing campaigns. Here you accept invitations and complete verification.';
+
+  @override
+  String get beneficiaryForCampaignLabel => 'For campaign';
+
+  @override
+  String get beneficiaryNextNone =>
+      'You have no beneficiary invitation yet. An organizer invites you by email.';
+
+  @override
+  String get beneficiaryNextInvited =>
+      'Accept the invitation above to begin. Accepting does not verify you.';
+
+  @override
+  String get beneficiaryNextAccepted =>
+      'Submit your verification details. An admin then reviews them.';
+
+  @override
+  String get beneficiaryNextPending =>
+      'Your verification was submitted and is waiting for admin review.';
+
+  @override
+  String get beneficiaryNextVerified =>
+      'You\'re a verified beneficiary. Payout setup is handled by the Kaalmo team.';
+
+  @override
+  String get beneficiaryNextRejected =>
+      'Update your details and resubmit for another review.';
+
+  @override
   String get beneficiaryStatusNone => 'Not started';
+
+  @override
+  String get beneficiaryStatusInvited => 'Invited';
+
+  @override
+  String get beneficiaryStatusAccepted => 'Accepted — verification needed';
 
   @override
   String get beneficiaryStatusPending => 'Under review';
@@ -1233,6 +1357,27 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get beneficiaryStatusRejected => 'Not approved';
+
+  @override
+  String get beneficiaryStatusNeedsInfo => 'More information needed';
+
+  @override
+  String get beneficiaryNeedsInfoNote =>
+      'The review team asked for more information. Update your details and resubmit.';
+
+  @override
+  String get beneficiaryInvitesTitle => 'Beneficiary invitations';
+
+  @override
+  String get beneficiaryInviteGeneric =>
+      'You\'ve been named the beneficiary for a campaign.';
+
+  @override
+  String get beneficiaryInviteAccept => 'Accept invitation';
+
+  @override
+  String get beneficiaryInviteAccepted =>
+      'Invitation accepted. Now complete your verification.';
 
   @override
   String get beneficiaryVerificationTitle => 'Verification';

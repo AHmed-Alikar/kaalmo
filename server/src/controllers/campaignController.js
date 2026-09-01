@@ -281,8 +281,88 @@ export const listCampaignDonations = asyncHandler(async (req, res) => {
 });
 
 export const listComments = asyncHandler(async (req, res) => {
-  const comments = await Comment.find({ campaignId: req.params.id }).sort({ createdAt: -1 });
-  res.json(comments);
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const filter = { campaignId: req.params.id };
+
+  const [items, total] = await Promise.all([
+    Comment.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('userId', 'fullName'),
+    Comment.countDocuments(filter),
+  ]);
+
+  res.json({ items, total, page, limit });
+});
+
+// Donations for every campaign the caller owns or co-organizes. Optional
+// filters: ?campaignId= ?status= ?q= (matches campaign title / donor name /
+// donation or payment reference). Paginated: { items, total, page, limit }.
+export const listMyCampaignDonations = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const { status, campaignId, q } = req.query;
+
+  const memberships = await CampaignMember.find({ userId: req.user.id, status: 'accepted' }).select('campaignId');
+  const ownedIds = (await Campaign.find({ organizerId: req.user.id }).select('_id')).map((c) => c._id);
+  const allowedIds = [...ownedIds, ...memberships.map((m) => m.campaignId)];
+
+  const scopedIds = campaignId
+    ? allowedIds.filter((id) => String(id) === String(campaignId))
+    : allowedIds;
+
+  const filter = { campaignId: { $in: scopedIds } };
+  if (status) filter.status = status;
+
+  let query = Donation.find(filter)
+    .sort({ createdAt: -1 })
+    .populate('campaignId', 'title')
+    .populate('donorId', 'fullName')
+    .populate('paymentId', 'provider status');
+
+  let items = await query.skip((page - 1) * limit).limit(limit).lean();
+  let total = await Donation.countDocuments(filter);
+
+  // Small-result server-side text filter over the populated fields. Donation
+  // volumes per organizer are bounded; this avoids a fragile cross-collection
+  // aggregate for the MVP.
+  if (q && q.trim()) {
+    const needle = q.trim().toLowerCase();
+    const all = await Donation.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('campaignId', 'title')
+      .populate('donorId', 'fullName')
+      .populate('paymentId', 'provider status')
+      .lean();
+    const matched = all.filter((d) => {
+      const title = `${d.campaignId?.title?.en || ''} ${d.campaignId?.title?.so || ''}`.toLowerCase();
+      const donor = (d.donorId?.fullName || '').toLowerCase();
+      const ref = `${d._id} ${d.paymentId?._id || ''} ${d.paymentTransactionId || ''}`.toLowerCase();
+      return title.includes(needle) || donor.includes(needle) || ref.includes(needle);
+    });
+    total = matched.length;
+    items = matched.slice((page - 1) * limit, (page - 1) * limit + limit);
+  }
+
+  res.json({
+    items: items.map((d) => ({
+      _id: d._id,
+      amount: d.amount,
+      currency: d.currency,
+      status: d.status,
+      isAnonymous: d.isAnonymous,
+      donorName: d.isAnonymous ? null : d.donorId?.fullName || null,
+      campaign: d.campaignId ? { _id: d.campaignId._id, title: d.campaignId.title } : null,
+      paymentStatus: d.paymentId?.status || null,
+      reference: String(d._id),
+      createdAt: d.createdAt,
+    })),
+    total,
+    page,
+    limit,
+  });
 });
 
 export const postComment = asyncHandler(async (req, res) => {

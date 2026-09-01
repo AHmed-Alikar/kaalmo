@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import StatusPill from '../../components/StatusPill';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
+import Pagination from '../../components/Pagination';
 import api from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
 import { categoryLabel } from '../../i18n/translations';
@@ -32,20 +33,24 @@ export default function AdminCampaigns() {
   const [searchParams, setSearchParams] = useSearchParams();
   const status = searchParams.get('status') || '';
   const [campaigns, setCampaigns] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reasonPrompt, setReasonPrompt] = useState(null); // { campaignId, action, labelKey }
   const [reasonText, setReasonText] = useState('');
   const [actionError, setActionError] = useState(null);
+  const LIMIT = 20;
 
-  function load() {
+  function load(p = page) {
     setLoading(true);
     api
-      .get('/admin/campaigns', { params: { status: status || undefined, limit: 50 } })
-      .then(({ data }) => setCampaigns(data.items))
+      .get('/admin/campaigns', { params: { status: status || undefined, page: p, limit: LIMIT } })
+      .then(({ data }) => { setCampaigns(data.items); setTotal(data.total); })
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, [status]);
+  useEffect(() => { setPage(1); load(1); /* eslint-disable-next-line */ }, [status]);
+  useEffect(() => { load(page); /* eslint-disable-next-line */ }, [page]);
 
   async function runAction(campaignId, action, reason) {
     setActionError(null);
@@ -53,7 +58,7 @@ export default function AdminCampaigns() {
       await api.patch(`/admin/campaigns/${campaignId}/review`, { action, reason });
       setReasonPrompt(null);
       setReasonText('');
-      load();
+      load(page);
     } catch (err) {
       setActionError(err.response?.data?.error?.message || t('adminCampaigns.actionError'));
     }
@@ -127,6 +132,8 @@ export default function AdminCampaigns() {
             })}
           </div>
         )}
+
+        <Pagination page={page} limit={LIMIT} total={total} onPage={setPage} />
       </div>
 
       {/* Destructive actions require an explicit reason and confirmation (Rule 15/24) */}

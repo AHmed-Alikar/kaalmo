@@ -58,7 +58,9 @@ class CampaignRepository {
   }
 
   Future<List<CampaignComment>> getComments(String id) async {
-    final list = await _api.getComments(id);
+    final json = await _api.getComments(id);
+    final raw = json['items'];
+    final list = raw is List ? raw : const [];
     return list
         .whereType<Map>()
         .map((e) => CampaignComment.fromJson(e.cast<String, dynamic>()))

@@ -13,6 +13,11 @@ class OrganizerApi {
   Future<List<dynamic>> myCampaigns() =>
       _client.get<List<dynamic>>(ApiRoutes.campaignsMine);
 
+  /// `POST /api/v1/campaigns` — creates a draft (`createCampaignSchema`).
+  /// Requires the `organizer` role (enforced by the backend).
+  Future<Map<String, dynamic>> createCampaign(Map<String, dynamic> body) =>
+      _client.post<Map<String, dynamic>>(ApiRoutes.campaigns, body: body);
+
   /// `PATCH /api/v1/campaigns/:id` — partial update (`updateCampaignSchema`).
   Future<Map<String, dynamic>> updateCampaign(String id, Map<String, dynamic> body) =>
       _client.patch<Map<String, dynamic>>(ApiRoutes.campaign(id), body: body);
@@ -42,6 +47,19 @@ class OrganizerApi {
   /// `GET /api/v1/campaigns/:id/members` — organizer-only team list.
   Future<List<dynamic>> campaignMembers(String id) =>
       _client.get<List<dynamic>>(ApiRoutes.campaignMembers(id));
+
+  /// `GET /api/v1/campaigns/:id/beneficiary` — the campaign's beneficiary
+  /// record + verification status (404 when none assigned).
+  Future<Map<String, dynamic>> campaignBeneficiary(String id) =>
+      _client.get<Map<String, dynamic>>(ApiRoutes.campaignBeneficiary(id));
+
+  /// `POST /api/v1/campaigns/:id/beneficiary` — owner assigns a beneficiary by
+  /// email. Backend enforces owner-only.
+  Future<Map<String, dynamic>> inviteBeneficiary(String id, String email) =>
+      _client.post<Map<String, dynamic>>(
+        ApiRoutes.campaignBeneficiary(id),
+        body: {'email': email},
+      );
 
   /// `GET /api/v1/campaign-invites/mine` — pending co-organizer invitations.
   Future<List<dynamic>> myInvites() =>

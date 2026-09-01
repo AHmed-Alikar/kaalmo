@@ -7,10 +7,14 @@ import api from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
 import { ADMIN_NAV } from './nav';
 
+// The queue shows records actually awaiting an admin decision (pending). Each
+// row exposes the submitted identity + document and the three review outcomes
+// the backend supports: verified | rejected | needs_more_information.
 export default function VerificationQueue() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
 
   function load() {
     setLoading(true);
@@ -23,8 +27,24 @@ export default function VerificationQueue() {
   useEffect(load, []);
 
   async function review(id, status) {
-    await api.patch(`/admin/beneficiaries/${id}/review`, { status });
-    load();
+    let reviewNote;
+    if (status === 'rejected') {
+      reviewNote = window.prompt(t('verificationQueue.rejectPrompt')) || undefined;
+    } else if (status === 'needs_more_information') {
+      reviewNote = window.prompt(t('verificationQueue.infoPrompt')) || undefined;
+      if (!reviewNote) return; // a request for info needs to say what's missing
+    }
+    setBusyId(id);
+    try {
+      await api.patch(`/admin/beneficiaries/${id}/review`, { status, reviewNote });
+      load();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function campaignTitle(c) {
+    return c?.title?.[language] || c?.title?.so || c?.title?.en;
   }
 
   return (
@@ -39,19 +59,64 @@ export default function VerificationQueue() {
         ) : beneficiaries.length === 0 ? (
           <EmptyState icon="gpp_good" title={t('verificationQueue.emptyTitle')} description={t('verificationQueue.emptyDesc')} />
         ) : (
-          <div className="flex flex-col divide-y divide-border border-t border-b border-border">
+          <div className="flex flex-col gap-md">
             {beneficiaries.map((b) => (
-              <div key={b._id} className="flex items-center justify-between py-lg gap-md flex-wrap">
-                <div>
-                  <p className="text-[14px] font-medium text-text-primary">{b.fullName}</p>
-                  <p className="text-[13px] text-text-secondary">{t('verificationQueue.account')}: {b.userId?.email || t('adminSupport.unknown')}</p>
-                </div>
-                <div className="flex items-center gap-md">
+              <div key={b._id} className="bg-surface border border-border rounded-lg p-lg flex flex-col gap-md">
+                <div className="flex items-start justify-between gap-md flex-wrap">
+                  <div className="flex flex-col gap-[2px]">
+                    <p className="text-[15px] font-semibold text-text-primary">{b.fullName || '—'}</p>
+                    <p className="text-[13px] text-text-secondary">
+                      {t('verificationQueue.account')}: {b.userId?.email || b.inviteEmail || t('adminSupport.unknown')}
+                    </p>
+                    {b.campaignId && (
+                      <p className="text-[13px] text-text-secondary">
+                        {t('verificationQueue.campaign')}: {campaignTitle(b.campaignId)}
+                      </p>
+                    )}
+                    {b.invitedBy && (
+                      <p className="text-[13px] text-text-secondary">
+                        {t('verificationQueue.invitedBy')}: {b.invitedBy.fullName || b.invitedBy.email}
+                      </p>
+                    )}
+                  </div>
                   <StatusPill status={b.verificationStatus} />
-                  <Button className="h-[36px] px-md text-[13px]" onClick={() => review(b._id, 'verified')}>
+                </div>
+
+                {b.idDocumentUrl ? (
+                  <a
+                    href={b.idDocumentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[13px] text-primary hover:underline"
+                  >
+                    {t('verificationQueue.idDocument')}
+                  </a>
+                ) : (
+                  <p className="text-[13px] text-text-secondary">{t('verificationQueue.noIdDocument')}</p>
+                )}
+
+                <div className="flex items-center gap-md flex-wrap pt-sm border-t border-border">
+                  <Button
+                    className="h-[36px] px-md text-[13px]"
+                    disabled={busyId === b._id}
+                    onClick={() => review(b._id, 'verified')}
+                  >
                     {t('verificationQueue.verify')}
                   </Button>
-                  <Button variant="destructive" className="h-[36px] px-md text-[13px]" onClick={() => review(b._id, 'rejected')}>
+                  <Button
+                    variant="secondary"
+                    className="h-[36px] px-md text-[13px]"
+                    disabled={busyId === b._id}
+                    onClick={() => review(b._id, 'needs_more_information')}
+                  >
+                    {t('verificationQueue.requestInfo')}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="h-[36px] px-md text-[13px]"
+                    disabled={busyId === b._id}
+                    onClick={() => review(b._id, 'rejected')}
+                  >
                     {t('verificationQueue.reject')}
                   </Button>
                 </div>

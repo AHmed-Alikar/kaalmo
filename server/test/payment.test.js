@@ -105,11 +105,18 @@ describe('POST /api/v1/campaigns/:id/donate — manual provider', () => {
     expect(audit.actorType).toBe('user');
   });
 
-  it.each([[0], [-5], [null], ['abc']])('rejects invalid amount %p', async (amount) => {
+  it.each([[0], [-5], [0.009], [null], ['abc']])('rejects invalid amount %p', async (amount) => {
     const campaign = await makeCampaign();
     const res = await request(app).post(`${API}/campaigns/${campaign._id}/donate`).send({ amount });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('accepts the minimum donation of 0.01', async () => {
+    const campaign = await makeCampaign();
+    const res = await request(app).post(`${API}/campaigns/${campaign._id}/donate`).send({ amount: 0.01 });
+    expect(res.status).toBe(201);
+    expect(res.body.donation.amount).toBe(0.01);
   });
 
   it('returns 404 for a non-existent campaign', async () => {
@@ -289,7 +296,7 @@ describe('GET /api/v1/payments/config', () => {
     expect(res.status).toBe(200);
     expect(res.body.providers).toEqual(['manual']);
     expect(res.body.currency).toBe('USD');
-    expect(res.body.minAmount).toBe(1);
+    expect(res.body.minAmount).toBe(0.01);
   });
 
   it('includes evc_plus when WaafiPay is configured', async () => {

@@ -82,6 +82,12 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () => context.push(AppRoutes.notifications),
             ),
             const SizedBox(height: 10),
+            _ProfileTile(
+              icon: Icons.add_circle_outline,
+              label: l10n.startFundraiserTitle,
+              onTap: () => context.push(AppRoutes.startFundraiser),
+            ),
+            const SizedBox(height: 10),
             if (user?.isOrganizer ?? false) ...[
               _ProfileTile(
                 icon: Icons.campaign_outlined,

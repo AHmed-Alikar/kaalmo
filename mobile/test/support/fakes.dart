@@ -135,6 +135,40 @@ class FakeAuthRepository implements AuthRepository {
   AuthUser? afterUpdate;
   Object? updateError;
 
+  // --- organizer access ---
+  Object? requestOrganizerError;
+  Object? confirmOrganizerError;
+  AuthUser? afterOrganizerConfirm;
+
+  @override
+  Future<void> requestOrganizerAccess({String? fullName, String? purpose}) async {
+    calls.add('requestOrganizerAccess:${fullName ?? ''}:${purpose ?? ''}');
+    if (requestOrganizerError != null) throw requestOrganizerError!;
+  }
+
+  @override
+  Future<AuthUser> confirmOrganizerAccess(String code) async {
+    calls.add('confirmOrganizerAccess:$code');
+    if (confirmOrganizerError != null) throw confirmOrganizerError!;
+    final base = startWithSession ?? afterLogin;
+    final upgraded = afterOrganizerConfirm ??
+        AuthUser(
+          id: base.id,
+          fullName: base.fullName,
+          email: base.email,
+          phone: base.phone,
+          roles: [...base.roles, if (!base.roles.contains('organizer')) 'organizer'],
+          language: base.language,
+          emailVerified: base.emailVerified,
+          phoneVerified: base.phoneVerified,
+          identityVerified: base.identityVerified,
+          status: base.status,
+          pushEnabled: base.pushEnabled,
+        );
+    startWithSession = upgraded;
+    return upgraded;
+  }
+
   @override
   Future<AuthUser> updateProfile({String? fullName, String? language, bool? pushEnabled}) async {
     calls.add('updateProfile:${fullName ?? ''}:${language ?? ''}:${pushEnabled ?? ''}');
@@ -384,7 +418,7 @@ Supporter fakeSupporter({String id = 's1', String? name = 'Hodan A.', num amount
 PaymentConfig fakePaymentConfig({
   List<String> providers = const ['manual', 'evc_plus'],
   String currency = 'USD',
-  num minAmount = 1,
+  num minAmount = 0.01,
 }) =>
     PaymentConfig(providers: providers, currency: currency, minAmount: minAmount);
 
@@ -512,6 +546,9 @@ class FakeOrganizerRepository implements OrganizerRepository {
   Object? campaignsError;
   int campaignsCalls = 0;
 
+  Campaign? createResult;
+  Object? createError;
+  final List<Map<String, dynamic>> createCalls = [];
   Campaign? updateResult;
   Object? updateError;
   Campaign? submitResult;
@@ -531,6 +568,14 @@ class FakeOrganizerRepository implements OrganizerRepository {
     campaignsCalls++;
     if (campaignsError != null) throw campaignsError!;
     return campaigns;
+  }
+
+  @override
+  Future<Campaign> createCampaign(Map<String, dynamic> body) async {
+    createCalls.add(body);
+    calls.add('create');
+    if (createError != null) throw createError!;
+    return createResult ?? fakeCampaign(id: 'new-camp-1', status: 'draft');
   }
 
   @override
@@ -571,6 +616,22 @@ class FakeOrganizerRepository implements OrganizerRepository {
   Future<List<CampaignMemberInfo>> campaignMembers(String id) async {
     if (membersError != null) throw membersError!;
     return members;
+  }
+
+  BeneficiaryProfile? campaignBeneficiaryValue;
+  Object? campaignBeneficiaryError;
+
+  @override
+  Future<BeneficiaryProfile?> campaignBeneficiary(String id) async {
+    if (campaignBeneficiaryError != null) throw campaignBeneficiaryError!;
+    return campaignBeneficiaryValue;
+  }
+
+  @override
+  Future<BeneficiaryProfile> inviteBeneficiary(String id, String email) async {
+    calls.add('inviteBeneficiary:$id:$email');
+    campaignBeneficiaryValue = fakeBeneficiaryProfile(status: 'invited');
+    return campaignBeneficiaryValue!;
   }
 
   List<CampaignInvite> invites = const [];
@@ -719,6 +780,21 @@ class FakeBeneficiaryRepository implements BeneficiaryRepository {
     calls.add('submitProfile:$fullName');
     if (submitError != null) throw submitError!;
     return submitResult ?? fakeBeneficiaryProfile(fullName: fullName, status: 'pending');
+  }
+
+  List<BeneficiaryProfile> invites = const [];
+  Object? invitesError;
+
+  @override
+  Future<List<BeneficiaryProfile>> myInvites() async {
+    if (invitesError != null) throw invitesError!;
+    return invites;
+  }
+
+  @override
+  Future<BeneficiaryProfile> acceptInvite(String id) async {
+    calls.add('acceptInvite:$id');
+    return fakeBeneficiaryProfile(status: 'accepted');
   }
 
   @override

@@ -23,6 +23,15 @@ class BeneficiaryApi {
         },
       );
 
+  /// `GET /api/v1/beneficiaries/invites/mine` — pending beneficiary invitations
+  /// addressed to the caller's email.
+  Future<List<dynamic>> myInvites() =>
+      _client.get<List<dynamic>>(ApiRoutes.beneficiaryInvitesMine);
+
+  /// `POST /api/v1/beneficiaries/invites/:id/accept`.
+  Future<Map<String, dynamic>> acceptInvite(String id) =>
+      _client.post<Map<String, dynamic>>(ApiRoutes.beneficiaryInviteAccept(id));
+
   /// `GET /api/v1/payout-accounts/mine`.
   Future<List<dynamic>> myPayoutAccounts() =>
       _client.get<List<dynamic>>(ApiRoutes.payoutAccountsMine);

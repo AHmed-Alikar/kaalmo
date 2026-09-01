@@ -1129,6 +1129,16 @@ class AppL10nSo extends AppL10n {
       'Weli ka-faa\'iidayste lalama xirin ololahan.';
 
   @override
+  String get organizerBeneficiaryEmailLabel => 'Iimaylka ka-faa\'iidaystaha';
+
+  @override
+  String get organizerBeneficiarySend => 'Dir casuumaad';
+
+  @override
+  String get organizerBeneficiarySent =>
+      'Casuumaadda waa la diray. Way aqbali doonaan oo xaqiijin dhammaystiri doonaan.';
+
+  @override
   String get organizerTeam => 'Kooxda';
 
   @override
@@ -1221,6 +1231,85 @@ class AppL10nSo extends AppL10n {
   String get organizerPublishUpdate => 'Daabac cusboonaysiinta';
 
   @override
+  String get startFundraiserTitle => 'Bilow olole aruurin';
+
+  @override
+  String get organizerAccessTitle => 'Noqo abaabule';
+
+  @override
+  String get organizerAccessBody =>
+      'Abaabulayaashu waxay abuuraan oo maamulaan ololayaal aruurin lacag. Waxaan kuu soo diri doonnaa koodh 6-god ah oo aad xaqiijiso — tallaabo hal mar ah, wax ka beddeli maayo sida aad u deeqdo.';
+
+  @override
+  String get organizerAccessConfirmTitle => 'Ku xaqiiji iimaylka';
+
+  @override
+  String get organizerAccessConfirmBody =>
+      'Geli koodhka 6-god ah ee aan u soo dirnay cinwaanka iimaylkaaga.';
+
+  @override
+  String get organizerAccessFullName => 'Magacaaga oo dhan';
+
+  @override
+  String get organizerAccessPurpose =>
+      'Maxaad lacag u aruurinaysaa? (ikhtiyaari)';
+
+  @override
+  String get organizerAccessPurposeHint =>
+      'tusaale: Daaweynta caafimaad ee walaalkay';
+
+  @override
+  String get organizerAccessSendCode => 'Dir koodhka';
+
+  @override
+  String get organizerAccessConfirm => 'Xaqiiji oo sii wad';
+
+  @override
+  String get organizerAccessResend => 'Dib u dir koodhka';
+
+  @override
+  String get organizerAccessResent => 'Koodh cusub ayaa soo socda.';
+
+  @override
+  String get organizerAccessChangeDetails => 'Beddel faahfaahinta';
+
+  @override
+  String get createCampaignTitle => 'Faahfaahinta ololaha';
+
+  @override
+  String get createCampaignSubtitle =>
+      'Ololahaaga waxaa loo kaydiyay qabyo. Waad dib u eegi kartaa oo aqbalaad u gudbin kartaa ka dib.';
+
+  @override
+  String get createCampaignTitleHint =>
+      'tusaale: Ka caawi dib-u-dhiska rugta caafimaad ee Xamar';
+
+  @override
+  String get createCampaignStoryHint =>
+      'Sharax cidda ay tahay, waxa lacagtu qaban doonto, iyo sababta ay muhiim u tahay.';
+
+  @override
+  String get createCampaignFieldEndDate => 'Taariikhda dhammaadka (ikhtiyaari)';
+
+  @override
+  String get createCampaignEndDatePick => 'Dooro taariikh';
+
+  @override
+  String get createCampaignCoverNote =>
+      'Sawirka daboolka waxaad ku dari kartaa mar dambe bogga ololaha ee webka.';
+
+  @override
+  String get createCampaignSubmit => 'Abuur ololaha';
+
+  @override
+  String get createCampaignSuccess =>
+      'Ololaha waa la abuuray — waxaa loo kaydiyay qabyo.';
+
+  @override
+  String get coOrgBanner =>
+      'Waxaad tahay wada-abaabule ololahan. Waad wax ka beddeli kartaa nuxurka oo aad cusboonaysiin dhigi kartaa; milkiiluhu wuxuu maamulaa kooxda, ka-faa\'iidaystaha, iyo lacag-bixinta.';
+
+  @override
   String get beneficiaryDashboardTitle => 'Ka-faa\'iidayste';
 
   @override
@@ -1228,7 +1317,45 @@ class AppL10nSo extends AppL10n {
       'Xogtaada ka-faa\'iidaystaha lama soo rari karin';
 
   @override
+  String get beneficiaryAccountBanner =>
+      'Kanu waa akoonkaaga ka-faa\'iidaystaha — wuu ka duwan yahay abaabulka ololayaasha. Halkan waxaad ku aqbashaa casuumaadaha oo aad ku dhammaystirtaa xaqiijinta.';
+
+  @override
+  String get beneficiaryForCampaignLabel => 'Ololaha';
+
+  @override
+  String get beneficiaryNextNone =>
+      'Weli casuumaad ka-faa\'iidayste ma haysatid. Abaabulaha ayaa iimayl kugu casuumaya.';
+
+  @override
+  String get beneficiaryNextInvited =>
+      'Aqbal casuumaadda kore si aad u bilowdo. Aqbalitaanku ku maaha xaqiijin.';
+
+  @override
+  String get beneficiaryNextAccepted =>
+      'Gudbi xogtaada xaqiijinta. Maamulaha ayaa kadib dib u eegaya.';
+
+  @override
+  String get beneficiaryNextPending =>
+      'Xaqiijintaada waa la gudbiyay waxayna sugaysaa dib-u-eegis maamul.';
+
+  @override
+  String get beneficiaryNextVerified =>
+      'Waxaad tahay ka-faa\'iidayste la xaqiijiyay. Diyaarinta lacag-bixinta waxaa qabta kooxda Kaalmo.';
+
+  @override
+  String get beneficiaryNextRejected =>
+      'Cusboonaysii xogtaada oo dib u gudbi si dib loogu eego.';
+
+  @override
   String get beneficiaryStatusNone => 'Lama bilaabin';
+
+  @override
+  String get beneficiaryStatusInvited => 'La casuumay';
+
+  @override
+  String get beneficiaryStatusAccepted =>
+      'La aqbalay — xaqiijin loo baahan yahay';
 
   @override
   String get beneficiaryStatusPending => 'Dib-u-eegis ku jira';
@@ -1238,6 +1365,28 @@ class AppL10nSo extends AppL10n {
 
   @override
   String get beneficiaryStatusRejected => 'Lama ansixin';
+
+  @override
+  String get beneficiaryStatusNeedsInfo =>
+      'Macluumaad dheeraad ah ayaa loo baahan yahay';
+
+  @override
+  String get beneficiaryNeedsInfoNote =>
+      'Kooxda dib-u-eegista ayaa codsatay macluumaad dheeraad ah. Cusboonaysii faahfaahintaada oo dib u gudbi.';
+
+  @override
+  String get beneficiaryInvitesTitle => 'Casuumaadaha ka-faa\'iidaystaha';
+
+  @override
+  String get beneficiaryInviteGeneric =>
+      'Waxaa lagugu magacaabay ka-faa\'iidayste olole.';
+
+  @override
+  String get beneficiaryInviteAccept => 'Aqbal casuumaadda';
+
+  @override
+  String get beneficiaryInviteAccepted =>
+      'Casuumaadda waa la aqbalay. Hadda buuxi xaqiijintaada.';
 
   @override
   String get beneficiaryVerificationTitle => 'Xaqiijin';

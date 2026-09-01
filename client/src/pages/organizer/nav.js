@@ -1,5 +1,6 @@
 export const ORGANIZER_NAV = [
   { to: '/organizer', labelKey: 'organizerDash.myCampaigns', icon: 'campaign' },
+  { to: '/organizer/donations', labelKey: 'organizerNav.donations', icon: 'volunteer_activism' },
   { to: '/organizer/analytics', labelKey: 'organizerNav.analytics', icon: 'monitoring' },
   { to: '/organizer/team', labelKey: 'organizerNav.team', icon: 'group' },
   { to: '/verification', labelKey: 'verification.title', icon: 'gpp_good' },

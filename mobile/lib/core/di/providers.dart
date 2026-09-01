@@ -29,6 +29,8 @@ import '../../features/beneficiary/data/models/payout_account.dart';
 import '../../features/organizer/application/campaign_editor_controller.dart';
 import '../../features/organizer/application/campaign_editor_state.dart';
 import '../../features/organizer/application/campaign_manage_controller.dart';
+import '../../features/organizer/application/create_campaign_controller.dart';
+import '../../features/organizer/application/organizer_access_controller.dart';
 import '../../features/organizer/application/post_update_controller.dart';
 import '../../features/organizer/data/models/campaign_invite.dart';
 import '../../features/organizer/data/models/campaign_member_info.dart';
@@ -310,6 +312,12 @@ final campaignMembersProvider = FutureProvider.autoDispose.family<List<CampaignM
   (ref, id) => ref.watch(organizerRepositoryProvider).campaignMembers(id),
 );
 
+/// The beneficiary assigned to a campaign, or `null` when none — organizer view.
+final campaignBeneficiaryProvider =
+    FutureProvider.autoDispose.family<BeneficiaryProfile?, String>(
+  (ref, id) => ref.watch(organizerRepositoryProvider).campaignBeneficiary(id),
+);
+
 final campaignManageControllerProvider = StateNotifierProvider.autoDispose
     .family<CampaignManageController, CampaignManageState, String>(
   (ref, id) => CampaignManageController(ref.watch(organizerRepositoryProvider), id),
@@ -330,6 +338,25 @@ final postUpdateControllerProvider = StateNotifierProvider.autoDispose
   (ref, id) => PostUpdateController(ref.watch(organizerRepositoryProvider), id),
 );
 
+/// "Become an organizer" flow (request code → confirm). autoDispose — a fresh
+/// attempt each time the Start-a-fundraiser screen is opened.
+final organizerAccessControllerProvider =
+    StateNotifierProvider.autoDispose<OrganizerAccessController, OrganizerAccessState>((ref) {
+  // read (not watch) — confirming organizer access changes the auth user, and
+  // this controller must not be torn down mid-request.
+  final user = ref.read(authControllerProvider).user;
+  return OrganizerAccessController(
+    ref.watch(authControllerProvider.notifier),
+    initialFullName: user?.fullName ?? '',
+  );
+});
+
+/// Mobile Create Campaign form + submit (`POST /campaigns`). autoDispose.
+final createCampaignControllerProvider =
+    StateNotifierProvider.autoDispose<CreateCampaignController, CreateCampaignState>(
+  (ref) => CreateCampaignController(ref.watch(organizerRepositoryProvider)),
+);
+
 // --- Beneficiary + payout ---
 
 final beneficiaryApiProvider = Provider<BeneficiaryApi>((ref) => BeneficiaryApi(ref.watch(apiClientProvider)));
@@ -340,6 +367,11 @@ final beneficiaryRepositoryProvider =
 /// The caller's beneficiary profile, or `null` when never submitted (404).
 final beneficiaryProfileProvider = FutureProvider.autoDispose<BeneficiaryProfile?>(
   (ref) => ref.watch(beneficiaryRepositoryProvider).getMyProfile(),
+);
+
+/// Pending beneficiary invitations addressed to the caller.
+final beneficiaryInvitesProvider = FutureProvider.autoDispose<List<BeneficiaryProfile>>(
+  (ref) => ref.watch(beneficiaryRepositoryProvider).myInvites(),
 );
 
 final payoutAccountsProvider = FutureProvider.autoDispose<List<PayoutAccount>>(

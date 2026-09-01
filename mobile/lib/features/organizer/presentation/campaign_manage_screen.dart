@@ -7,6 +7,7 @@ import '../../../core/errors/error_presenter.dart';
 import '../../../core/localization/l10n.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/buttons/secondary_button.dart';
 import '../../../shared/states/state_views.dart';
 import '../../../shared/widgets/app_progress_bar.dart';
 import '../../../shared/widgets/network_image_box.dart';
@@ -135,6 +136,12 @@ class _Content extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
 
+          if (!isOwner)
+            _Note(
+              icon: Icons.groups_2_outlined,
+              tone: scheme.primary,
+              text: l10n.coOrgBanner,
+            ),
           if (status == CampaignStatusView.rejected)
             _Note(
               icon: Icons.info_outline,
@@ -235,7 +242,7 @@ class _Content extends ConsumerWidget {
             ),
 
           const SizedBox(height: 24),
-          _BeneficiarySection(hasBeneficiary: (campaign.beneficiaryId ?? '').isNotEmpty),
+          _BeneficiarySection(campaignId: id, isOwner: isOwner),
           if (isOwner) ...[
             const SizedBox(height: 20),
             _TeamSection(campaignId: id),
@@ -318,15 +325,58 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _BeneficiarySection extends StatelessWidget {
-  const _BeneficiarySection({required this.hasBeneficiary});
+/// Organizer's view of the campaign beneficiary: assign one by email (owner
+/// only) and watch its verification status move through the admin review.
+class _BeneficiarySection extends ConsumerStatefulWidget {
+  const _BeneficiarySection({required this.campaignId, required this.isOwner});
 
-  final bool hasBeneficiary;
+  final String campaignId;
+  final bool isOwner;
+
+  @override
+  ConsumerState<_BeneficiarySection> createState() => _BeneficiarySectionState();
+}
+
+class _BeneficiarySectionState extends ConsumerState<_BeneficiarySection> {
+  final _email = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _invite() async {
+    final email = _email.text.trim();
+    if (email.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    final l10n = context.l10n;
+    try {
+      await ref.read(organizerRepositoryProvider).inviteBeneficiary(widget.campaignId, email);
+      _email.clear();
+      ref.invalidate(campaignBeneficiaryProvider(widget.campaignId));
+      ref.invalidate(organizerCampaignProvider(widget.campaignId));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.organizerBeneficiarySent)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(presentError(e, l10n))));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final beneficiary = ref.watch(campaignBeneficiaryProvider(widget.campaignId));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,18 +390,69 @@ class _BeneficiarySection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: scheme.outlineVariant),
           ),
-          child: Row(
-            children: [
-              Icon(hasBeneficiary ? Icons.verified_user_outlined : Icons.person_off_outlined,
-                  size: 18, color: hasBeneficiary ? scheme.primary : scheme.onSurfaceVariant),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  hasBeneficiary ? l10n.organizerBeneficiaryLinked : l10n.organizerBeneficiaryNone,
-                  style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
-                ),
-              ),
-            ],
+          child: beneficiary.when(
+            loading: () => const SizedBox(
+              height: 20,
+              child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+            ),
+            error: (_, _) => Text(l10n.organizerBeneficiaryNone,
+                style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant)),
+            data: (b) {
+              if (b == null) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.organizerBeneficiaryNone,
+                        style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant)),
+                    if (widget.isOwner) ...[
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          labelText: l10n.organizerBeneficiaryEmailLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: SecondaryButton(
+                          label: l10n.organizerBeneficiarySend,
+                          isLoading: _sending,
+                          onPressed: _invite,
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              }
+              final status = b.statusView;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(status.icon, size: 18, color: status.color),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          b.fullName.trim().isNotEmpty ? b.fullName : (b.inviteEmail ?? l10n.organizerBeneficiaryLinked),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(status.label(l10n),
+                      style: TextStyle(fontSize: 12, color: status.color, fontWeight: FontWeight.w700)),
+                  if (b.reviewNote != null) ...[
+                    const SizedBox(height: 4),
+                    Text(b.reviewNote!, style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant)),
+                  ],
+                ],
+              );
+            },
           ),
         ),
       ],

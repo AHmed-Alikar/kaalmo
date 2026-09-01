@@ -1,7 +1,9 @@
 import '../../../core/config/app_config.dart';
 import '../../../core/utils/media_url.dart';
+import '../../beneficiary/data/models/beneficiary_profile.dart';
 import '../../campaigns/data/models/campaign.dart';
 import '../../campaigns/data/models/campaign_update.dart';
+import '../../../core/errors/app_exception.dart';
 import 'models/campaign_invite.dart';
 import 'models/campaign_member_info.dart';
 import 'organizer_api.dart';
@@ -23,6 +25,9 @@ class OrganizerRepository {
         .map((e) => Campaign.fromJson(e.cast<String, dynamic>(), mediaUrlResolver: _resolveMedia))
         .toList();
   }
+
+  Future<Campaign> createCampaign(Map<String, dynamic> body) async =>
+      Campaign.fromJson(await _api.createCampaign(body), mediaUrlResolver: _resolveMedia);
 
   Future<Campaign> updateCampaign(String id, Map<String, dynamic> body) async =>
       Campaign.fromJson(await _api.updateCampaign(id, body), mediaUrlResolver: _resolveMedia);
@@ -48,6 +53,19 @@ class OrganizerRepository {
         .map((e) => CampaignMemberInfo.fromJson(e.cast<String, dynamic>()))
         .toList();
   }
+
+  /// The beneficiary assigned to a campaign, or `null` when none (404).
+  Future<BeneficiaryProfile?> campaignBeneficiary(String id) async {
+    try {
+      return BeneficiaryProfile.fromJson(await _api.campaignBeneficiary(id));
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  Future<BeneficiaryProfile> inviteBeneficiary(String id, String email) async =>
+      BeneficiaryProfile.fromJson(await _api.inviteBeneficiary(id, email));
 
   Future<List<CampaignInvite>> myInvites() async {
     final list = await _api.myInvites();

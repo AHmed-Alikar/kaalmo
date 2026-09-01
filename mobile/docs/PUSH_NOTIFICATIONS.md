@@ -35,7 +35,26 @@ FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
 ```
 
-Without them `fcmService` is a silent no-op; in-app notifications still work.
+Without them `fcmService` is a **no-op** — **no** push is sent in any app state
+(foreground "notifications" you still see are the in-app feed re-fetched over
+REST, not FCM). In-app notifications still work.
+
+The `FIREBASE_PROJECT_ID` (and the `project_id` inside the service-account JSON)
+**must match** the `project_id` in `mobile/android/app/google-services.json`
+(currently `kaalmo-4e32f`). A mismatch = tokens minted for one project, pushes
+sent from another → every send fails with `messaging/registration-token-not-registered`.
+
+### Diagnosing on the server
+
+- **Startup**: the server prints one line —
+  `[fcmService] FCM push ENABLED (project …)` or
+  `[fcmService] FCM push DISABLED — FIREBASE_* not set …`.
+- **Per notification**: `sendToUser` logs (no token, no text, no secrets), e.g.
+  `[fcmService] sendToUser user=… type=… -> SENT devices=1 success=1 failure=0`
+  or `-> SKIPPED not_configured` / `-> SKIPPED no_devices` / `errors=messaging/...`.
+
+If you see `SKIPPED not_configured`, the credentials are not loaded — fix that
+before looking at the device.
 
 ## 3. Real-device verification plan
 

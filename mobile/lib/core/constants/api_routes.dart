@@ -15,6 +15,8 @@ class ApiRoutes {
 
   // Current user
   static const me = '/users/me';
+  static const requestOrganizerAccess = '/users/me/request-organizer-access';
+  static const confirmOrganizerAccess = '/users/me/confirm-organizer-access';
 
   // Devices (push)
   static const devices = '/devices';
@@ -27,6 +29,7 @@ class ApiRoutes {
   static String campaignSubmit(String id) => '/campaigns/$id/submit';
   static String campaignCancel(String id) => '/campaigns/$id/cancel';
   static String campaignMembers(String id) => '/campaigns/$id/members';
+  static String campaignBeneficiary(String id) => '/campaigns/$id/beneficiary';
   static String campaignUpdates(String id) => '/campaigns/$id/updates';
   static String campaignComments(String id) => '/campaigns/$id/comments';
   static String campaignDonations(String id) => '/campaigns/$id/donations';
@@ -44,6 +47,8 @@ class ApiRoutes {
 
   // Beneficiary & payout
   static const beneficiaryMe = '/beneficiaries/me';
+  static const beneficiaryInvitesMine = '/beneficiaries/invites/mine';
+  static String beneficiaryInviteAccept(String id) => '/beneficiaries/invites/$id/accept';
   static const payoutAccountsMine = '/payout-accounts/mine';
   static const payoutAccounts = '/payout-accounts';
 

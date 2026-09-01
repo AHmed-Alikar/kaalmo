@@ -91,6 +91,26 @@ class AuthApi {
     return AuthUser.fromJson(json);
   }
 
+  /// `POST /api/v1/users/me/request-organizer-access` — sends the 6-digit
+  /// email confirmation code. Never grants the role by itself. Returns
+  /// `{ sent: true }`.
+  Future<void> requestOrganizerAccess({String? fullName, String? purpose}) =>
+      _client.post<Map<String, dynamic>>(
+        ApiRoutes.requestOrganizerAccess,
+        body: {'fullName': ?fullName, 'purpose': ?purpose},
+      );
+
+  /// `POST /api/v1/users/me/confirm-organizer-access` — submits the emailed
+  /// code. On success the backend adds the `organizer` role and returns a
+  /// fresh token pair (`{ confirmed, accessToken, refreshToken }`).
+  Future<TokenPair> confirmOrganizerAccess(String code) async {
+    final json = await _client.post<Map<String, dynamic>>(
+      ApiRoutes.confirmOrganizerAccess,
+      body: {'code': code},
+    );
+    return TokenPair.fromJson(json);
+  }
+
   /// `PATCH /api/v1/users/me` — backend only accepts `fullName`, `language`,
   /// `pushEnabled`; returns the updated public user.
   Future<AuthUser> updateMe({String? fullName, String? language, bool? pushEnabled}) async {

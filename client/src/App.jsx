@@ -24,6 +24,7 @@ import DonorSettings from './pages/donor/Settings';
 
 import OrganizerOnboard from './pages/organizer/Onboard';
 import OrganizerDashboard from './pages/organizer/Dashboard';
+import OrganizerDonations from './pages/organizer/Donations';
 import CreateCampaignBasics from './pages/organizer/CreateCampaignBasics';
 import CreateCampaignStory from './pages/organizer/CreateCampaignStory';
 import CreateCampaignReview from './pages/organizer/CreateCampaignReview';
@@ -85,6 +86,7 @@ export default function App() {
           reach these. Campaign creation and Team/Withdrawals stay
           organizer-role-gated below (owner-only actions). */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
+      <Route path="/organizer/donations" element={<ProtectedRoute><OrganizerDonations /></ProtectedRoute>} />
       <Route path="/organizer/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/organizer/campaigns/:id/edit" element={<ProtectedRoute><EditCampaign /></ProtectedRoute>} />
       <Route path="/organizer/new/basics" element={<ProtectedRoute roles={['organizer', 'admin']}><CreateCampaignBasics /></ProtectedRoute>} />

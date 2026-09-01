@@ -25,6 +25,29 @@ export function isFcmConfigured() {
   );
 }
 
+// A Firebase service-account private_key survives a lot of round-trips before it
+// reaches us (copied out of JSON, pasted into .env, edited on Windows). Accept
+// every common shape and hand firebase-admin a clean PEM:
+//   - value wrapped in a stray/unbalanced " or ' (dotenv leaves an unbalanced
+//     quote in place — this was the actual bug)
+//   - \n / \r\n escape sequences instead of real newlines
+//   - literal CR characters from a CRLF paste
+//   - a missing trailing newline
+// Never logged.
+export function normalizePrivateKey(raw) {
+  if (!raw) return raw;
+  let key = raw.trim();
+  // strip a matched surrounding quote pair, then any leftover stray quotes
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  key = key.replace(/^['"]+/, '').replace(/['"]+$/, '');
+  // escape sequences -> real newlines; drop carriage returns
+  key = key.replace(/\\r/g, '').replace(/\\n/g, '\n').replace(/\r/g, '');
+  if (!key.endsWith('\n')) key += '\n';
+  return key;
+}
+
 // Lazily import and initialise firebase-admin so an unconfigured deployment
 // never loads the SDK.
 async function getMessaging() {
@@ -40,8 +63,7 @@ async function getMessaging() {
             credential: cert({
               projectId: process.env.FIREBASE_PROJECT_ID,
               clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-              // Support both raw multiline and \n-escaped single-line values.
-              privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+              privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
             }),
           },
           'kaalmo-fcm'
@@ -69,9 +91,14 @@ function toStringDataMap(data = {}) {
 // never throws, prunes dead tokens, returns a small summary for tests/logs.
 export async function sendToUser(userId, { title, body, data } = {}) {
   const result = { configured: isFcmConfigured(), sent: 0, failed: 0, cleaned: 0, skipped: null };
+  // Diagnostic breadcrumb: says whether we even attempt a send. Never logs the
+  // token, the notification text or any credential — only counts and FCM error
+  // codes. `type` comes from the structured data map.
+  const tag = `[fcmService] sendToUser user=${userId} type=${data?.type || '-'}`;
   try {
     if (!result.configured) {
       result.skipped = 'not_configured';
+      console.warn(`${tag} -> SKIPPED not_configured (no FIREBASE_* env — nothing sent to Firebase)`);
       return result;
     }
 
@@ -82,27 +109,45 @@ export async function sendToUser(userId, { title, body, data } = {}) {
     }
     if (user.pushEnabled === false) {
       result.skipped = 'push_disabled';
+      console.warn(`${tag} -> SKIPPED push_disabled (user turned push off)`);
       return result;
     }
 
     const devices = await DeviceToken.find({ userId }).select('token');
     if (devices.length === 0) {
       result.skipped = 'no_devices';
+      console.warn(`${tag} -> SKIPPED no_devices (user has no registered push token)`);
       return result;
     }
 
     const messaging = await getMessaging();
     if (!messaging) {
       result.skipped = 'init_failed';
+      console.error(`${tag} -> SKIPPED init_failed (Firebase Admin failed to initialise — check credentials)`);
       return result;
     }
 
     const tokens = devices.map((d) => d.token);
     const response = await messaging.sendEachForMulticast({
       tokens,
+      // Keep a top-level `notification` block: this makes it a *notification
+      // message* so Android auto-displays a system-tray notification while the
+      // app is backgrounded or terminated (a data-only message would not).
       notification: { title, body },
       data: toStringDataMap(data),
-      android: { priority: 'high' },
+      android: {
+        priority: 'high',
+        notification: {
+          // Target the high-importance channel MainActivity creates. Without a
+          // channelId here Android 8+ relies solely on the manifest
+          // default-channel metadata, which is dropped silently if that
+          // channel does not exist yet in a fresh (terminated-app) process.
+          channelId: 'kaalmo_default',
+          priority: 'high',
+          sound: 'default',
+          defaultVibrateTimings: true,
+        },
+      },
       apns: { payload: { aps: { sound: 'default' } } },
     });
 
@@ -120,6 +165,17 @@ export async function sendToUser(userId, { title, body, data } = {}) {
       const del = await DeviceToken.deleteMany({ token: { $in: deadTokens } });
       result.cleaned = del.deletedCount || 0;
     }
+
+    // Distinct FCM error codes (not messages) so a real-device failure is
+    // diagnosable from the server log alone.
+    const errorCodes = [
+      ...new Set(response.responses.filter((r) => !r.success).map((r) => r.error?.code || 'unknown')),
+    ];
+    console.log(
+      `${tag} -> SENT devices=${tokens.length} success=${result.sent} failure=${result.failed}` +
+        (errorCodes.length ? ` errors=${errorCodes.join(',')}` : '') +
+        (result.cleaned ? ` cleaned=${result.cleaned}` : '')
+    );
 
     return result;
   } catch (err) {

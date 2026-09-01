@@ -2,4 +2,5 @@
 <resources>
     <!-- Kaalmo primary — used to tint push notification icons. -->
     <color name="kaalmo_notification_accent">#0B7189</color>
+	<color name="ic_launcher_background">#FFFFFF</color>
 </resources>

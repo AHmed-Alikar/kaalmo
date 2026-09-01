@@ -27,6 +27,7 @@ import '../../features/organizer/presentation/my_campaigns_screen.dart';
 import '../../features/organizer/presentation/organizer_dashboard_screen.dart';
 import '../../features/organizer/presentation/organizer_invites_screen.dart';
 import '../../features/organizer/presentation/post_update_screen.dart';
+import '../../features/organizer/presentation/start_fundraiser_screen.dart';
 import '../../features/profile/presentation/about_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/profile/presentation/settings_screen.dart';
@@ -207,6 +208,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: 'invites',
             parentNavigatorKey: _rootKey,
             builder: (_, _) => const OrganizerInvitesScreen(),
+          ),
+          GoRoute(
+            path: 'start',
+            parentNavigatorKey: _rootKey,
+            builder: (_, _) => const StartFundraiserScreen(),
           ),
           GoRoute(
             path: 'campaign/:id',

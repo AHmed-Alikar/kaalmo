@@ -16,6 +16,7 @@ class AppRoutes {
   static const organizer = '/organizer';
   static const organizerCampaigns = '/organizer/campaigns';
   static const organizerInvites = '/organizer/invites';
+  static const startFundraiser = '/organizer/start';
   static const beneficiary = '/beneficiary';
   static const notifications = '/notifications';
   static const profile = '/profile';

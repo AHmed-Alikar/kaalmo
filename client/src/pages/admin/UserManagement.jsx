@@ -2,29 +2,35 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
+import Pagination from '../../components/Pagination';
 import api from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
 import { ADMIN_NAV } from './nav';
+
+const LIMIT = 20;
 
 export default function UserManagement() {
   const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  function load(query = '') {
+  function load(query = q, p = page) {
     setLoading(true);
     api
-      .get('/admin/users', { params: { q: query || undefined, limit: 50 } })
-      .then(({ data }) => setUsers(data.items))
+      .get('/admin/users', { params: { q: query || undefined, page: p, limit: LIMIT } })
+      .then(({ data }) => { setUsers(data.items); setTotal(data.total); })
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => load(), []);
+  useEffect(() => { load(q, page); /* eslint-disable-next-line */ }, [page]);
+  function search() { setPage(1); load(q, 1); }
 
   async function setStatus(id, status) {
     await api.patch(`/admin/users/${id}/status`, { status });
-    load(q);
+    load(q, page);
   }
 
   return (
@@ -37,7 +43,7 @@ export default function UserManagement() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load(q)}
+            onKeyDown={(e) => e.key === 'Enter' && search()}
             placeholder={t('userManagement.searchPlaceholder')}
             className="w-full pl-4xl pr-lg h-[40px] rounded border border-border bg-surface text-text-primary outline-none focus:border-primary"
           />
@@ -83,6 +89,8 @@ export default function UserManagement() {
             </table>
           </div>
         )}
+
+        <Pagination page={page} limit={LIMIT} total={total} onPage={setPage} />
       </div>
     </DashboardLayout>
   );

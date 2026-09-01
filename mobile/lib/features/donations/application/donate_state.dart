@@ -35,7 +35,7 @@ class DonateState {
     this.configError,
     this.result,
     this.submitError,
-    this.minAmount = 1,
+    this.minAmount = 0.01,
   });
 
   final DonatePhase phase;

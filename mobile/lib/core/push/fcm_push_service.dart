@@ -16,8 +16,20 @@ import 'push_service.dart';
 /// later via `getInitialMessage()` / `onMessageOpenedApp`.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Intentionally minimal — no Firebase.initializeApp() here (the plugin does
-  // it), no logging of payload contents.
+  // Runs in its own isolate. Ensure Firebase is available in this context —
+  // the plugin usually does this, but calling it guarded is safe and avoids a
+  // silently-thrown "no Firebase app" if that ever changes.
+  try {
+    if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+  } catch (_) {/* already initialised / not configured */}
+
+  // Nothing to display here: messages carry a `notification` block, so Android
+  // shows the system-tray notification itself. The tap is handled on next
+  // launch via getInitialMessage() / onMessageOpenedApp.
+  if (kDebugMode) {
+    debugPrint('[FCM bg] message ${message.messageId} '
+        'hasNotification=${message.notification != null} dataKeys=${message.data.keys.toList()}');
+  }
 }
 
 /// Firebase Cloud Messaging implementation of [PushService].

@@ -156,8 +156,11 @@ void main() {
       ctrl.setAmount('abc');
       expect(c.read(donateControllerProvider('c1')).amountIssue, AmountIssue.notANumber);
 
-      ctrl.setAmount('0.5'); // min is 1
+      ctrl.setAmount('0.005'); // min is 0.01
       expect(c.read(donateControllerProvider('c1')).amountIssue, AmountIssue.belowMinimum);
+
+      ctrl.setAmount('0.01'); // exactly the minimum is allowed
+      expect(c.read(donateControllerProvider('c1')).amountIssue, AmountIssue.none);
 
       ctrl.setAmount('2000000');
       expect(c.read(donateControllerProvider('c1')).amountIssue, AmountIssue.aboveMaximum);

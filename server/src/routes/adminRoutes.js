@@ -6,11 +6,11 @@ import { validate } from '../middleware/validate.js';
 import { z } from 'zod';
 import { reviewCampaignSchema, confirmPaymentSchema, confirmPaymentsBatchSchema } from '../validators/adminValidators.js';
 import { reviewReportSchema } from '../validators/reportValidators.js';
+import { reviewBeneficiarySchema } from '../validators/beneficiaryValidators.js';
 import * as reportController from '../controllers/reportController.js';
 import * as supportTicketController from '../controllers/supportTicketController.js';
 import { replyTicketSchema, updateTicketStatusSchema } from '../validators/supportTicketValidators.js';
 
-const reviewBeneficiarySchema = z.object({ status: z.enum(['verified', 'rejected']) });
 const updateUserStatusSchema = z.object({ status: z.enum(['active', 'suspended', 'banned']) });
 
 const router = Router();
@@ -32,6 +32,7 @@ router.patch('/users/:id/status', validate(updateUserStatusSchema), adminControl
 router.get('/audit-logs', adminController.listAuditLogs);
 
 router.get('/reports', reportController.listReports);
+router.get('/reports/summary', reportController.reportSummary);
 router.patch('/reports/:id/review', validate(reviewReportSchema), reportController.reviewReport);
 
 router.get('/support-tickets', supportTicketController.listSupportTickets);

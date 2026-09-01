@@ -634,7 +634,7 @@ abstract class AppL10n {
   /// No description provided for @homeGreetingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Find a cause worth supporting today.'**
+  /// **'Find a cause worth supporting test.'**
   String get homeGreetingSubtitle;
 
   /// No description provided for @homeSearchHint.
@@ -2101,6 +2101,24 @@ abstract class AppL10n {
   /// **'No beneficiary is linked to this campaign yet.'**
   String get organizerBeneficiaryNone;
 
+  /// No description provided for @organizerBeneficiaryEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Beneficiary\'s email'**
+  String get organizerBeneficiaryEmailLabel;
+
+  /// No description provided for @organizerBeneficiarySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send invitation'**
+  String get organizerBeneficiarySend;
+
+  /// No description provided for @organizerBeneficiarySent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent. They\'ll accept and complete verification.'**
+  String get organizerBeneficiarySent;
+
   /// No description provided for @organizerTeam.
   ///
   /// In en, this message translates to:
@@ -2263,6 +2281,144 @@ abstract class AppL10n {
   /// **'Publish update'**
   String get organizerPublishUpdate;
 
+  /// No description provided for @startFundraiserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a fundraiser'**
+  String get startFundraiserTitle;
+
+  /// No description provided for @organizerAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Become an organizer'**
+  String get organizerAccessTitle;
+
+  /// No description provided for @organizerAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizers create and manage fundraising campaigns. We\'ll email you a 6-digit code to confirm — this is a one-time step and doesn\'t change how you donate.'**
+  String get organizerAccessBody;
+
+  /// No description provided for @organizerAccessConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm by email'**
+  String get organizerAccessConfirmTitle;
+
+  /// No description provided for @organizerAccessConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code we sent to your email address.'**
+  String get organizerAccessConfirmBody;
+
+  /// No description provided for @organizerAccessFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your full name'**
+  String get organizerAccessFullName;
+
+  /// No description provided for @organizerAccessPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'What will you raise funds for? (optional)'**
+  String get organizerAccessPurpose;
+
+  /// No description provided for @organizerAccessPurposeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Medical treatment for my brother'**
+  String get organizerAccessPurposeHint;
+
+  /// No description provided for @organizerAccessSendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get organizerAccessSendCode;
+
+  /// No description provided for @organizerAccessConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm & continue'**
+  String get organizerAccessConfirm;
+
+  /// No description provided for @organizerAccessResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get organizerAccessResend;
+
+  /// No description provided for @organizerAccessResent.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code is on its way.'**
+  String get organizerAccessResent;
+
+  /// No description provided for @organizerAccessChangeDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Change details'**
+  String get organizerAccessChangeDetails;
+
+  /// No description provided for @createCampaignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign details'**
+  String get createCampaignTitle;
+
+  /// No description provided for @createCampaignSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your campaign is saved as a draft. You can review it and submit it for approval afterwards.'**
+  String get createCampaignSubtitle;
+
+  /// No description provided for @createCampaignTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Help rebuild the Xamar clinic'**
+  String get createCampaignTitleHint;
+
+  /// No description provided for @createCampaignStoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain who this is for, what the funds will do, and why it matters.'**
+  String get createCampaignStoryHint;
+
+  /// No description provided for @createCampaignFieldEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date (optional)'**
+  String get createCampaignFieldEndDate;
+
+  /// No description provided for @createCampaignEndDatePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get createCampaignEndDatePick;
+
+  /// No description provided for @createCampaignCoverNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add a cover photo later from the campaign page on the web.'**
+  String get createCampaignCoverNote;
+
+  /// No description provided for @createCampaignSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create campaign'**
+  String get createCampaignSubmit;
+
+  /// No description provided for @createCampaignSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign created — saved as a draft.'**
+  String get createCampaignSuccess;
+
+  /// No description provided for @coOrgBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re a co-organizer on this campaign. You can edit its content and post updates; the owner manages the team, beneficiary and withdrawals.'**
+  String get coOrgBanner;
+
   /// No description provided for @beneficiaryDashboardTitle.
   ///
   /// In en, this message translates to:
@@ -2275,11 +2431,71 @@ abstract class AppL10n {
   /// **'Couldn\'t load your beneficiary profile'**
   String get beneficiaryLoadErrorTitle;
 
+  /// No description provided for @beneficiaryAccountBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your beneficiary account — separate from organizing campaigns. Here you accept invitations and complete verification.'**
+  String get beneficiaryAccountBanner;
+
+  /// No description provided for @beneficiaryForCampaignLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'For campaign'**
+  String get beneficiaryForCampaignLabel;
+
+  /// No description provided for @beneficiaryNextNone.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no beneficiary invitation yet. An organizer invites you by email.'**
+  String get beneficiaryNextNone;
+
+  /// No description provided for @beneficiaryNextInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept the invitation above to begin. Accepting does not verify you.'**
+  String get beneficiaryNextInvited;
+
+  /// No description provided for @beneficiaryNextAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit your verification details. An admin then reviews them.'**
+  String get beneficiaryNextAccepted;
+
+  /// No description provided for @beneficiaryNextPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Your verification was submitted and is waiting for admin review.'**
+  String get beneficiaryNextPending;
+
+  /// No description provided for @beneficiaryNextVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re a verified beneficiary. Payout setup is handled by the Kaalmo team.'**
+  String get beneficiaryNextVerified;
+
+  /// No description provided for @beneficiaryNextRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your details and resubmit for another review.'**
+  String get beneficiaryNextRejected;
+
   /// No description provided for @beneficiaryStatusNone.
   ///
   /// In en, this message translates to:
   /// **'Not started'**
   String get beneficiaryStatusNone;
+
+  /// No description provided for @beneficiaryStatusInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited'**
+  String get beneficiaryStatusInvited;
+
+  /// No description provided for @beneficiaryStatusAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted — verification needed'**
+  String get beneficiaryStatusAccepted;
 
   /// No description provided for @beneficiaryStatusPending.
   ///
@@ -2298,6 +2514,42 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Not approved'**
   String get beneficiaryStatusRejected;
+
+  /// No description provided for @beneficiaryStatusNeedsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'More information needed'**
+  String get beneficiaryStatusNeedsInfo;
+
+  /// No description provided for @beneficiaryNeedsInfoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The review team asked for more information. Update your details and resubmit.'**
+  String get beneficiaryNeedsInfoNote;
+
+  /// No description provided for @beneficiaryInvitesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Beneficiary invitations'**
+  String get beneficiaryInvitesTitle;
+
+  /// No description provided for @beneficiaryInviteGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been named the beneficiary for a campaign.'**
+  String get beneficiaryInviteGeneric;
+
+  /// No description provided for @beneficiaryInviteAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept invitation'**
+  String get beneficiaryInviteAccept;
+
+  /// No description provided for @beneficiaryInviteAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation accepted. Now complete your verification.'**
+  String get beneficiaryInviteAccepted;
 
   /// No description provided for @beneficiaryVerificationTitle.
   ///

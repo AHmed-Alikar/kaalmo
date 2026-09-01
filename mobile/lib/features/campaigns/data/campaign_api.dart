@@ -49,9 +49,13 @@ class CampaignApi {
   Future<List<dynamic>> getUpdates(String id) =>
       _client.get<List<dynamic>>(ApiRoutes.campaignUpdates(id));
 
-  /// `GET /api/v1/campaigns/:id/comments` — newest-first, no pagination.
-  Future<List<dynamic>> getComments(String id) =>
-      _client.get<List<dynamic>>(ApiRoutes.campaignComments(id));
+  /// `GET /api/v1/campaigns/:id/comments` — newest-first, paginated
+  /// (`{ items, total, page, limit }`).
+  Future<Map<String, dynamic>> getComments(String id, {int page = 1, int limit = 30}) =>
+      _client.get<Map<String, dynamic>>(
+        ApiRoutes.campaignComments(id),
+        query: {'page': page, 'limit': limit},
+      );
 
   /// `POST /api/v1/campaigns/:id/comments` — `{ text }` (1–1000). Auth.
   Future<Map<String, dynamic>> postComment(String id, String text) => _client.post<Map<String, dynamic>>(

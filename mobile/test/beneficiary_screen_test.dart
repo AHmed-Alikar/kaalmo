@@ -69,20 +69,22 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Start beneficiary verification'), findsOneWidget);
   });
 
-  testWidgets('a verified profile with a linked account shows payout ready', (tester) async {
+  testWidgets('a verified profile shows the verified next-step and no payout UI', (tester) async {
     final repo = FakeBeneficiaryRepository()
-      ..profile = fakeBeneficiaryProfile(status: 'verified', payoutAccountId: 'pa1')
-      ..payoutAccounts = [fakePayoutAccount(verified: true)];
+      ..profile = fakeBeneficiaryProfile(status: 'verified');
     await _pump(tester, repo: repo);
-    expect(find.text('Ready for withdrawal'), findsWidgets);
-    expect(find.textContaining('***1234'), findsOneWidget);
+    expect(find.text('Verified'), findsWidgets);
+    expect(find.textContaining("You're a verified beneficiary"), findsOneWidget);
+    // The payout section was removed from the beneficiary screen entirely.
+    expect(find.text('Payout account'), findsNothing);
+    expect(find.text('Add payout account'), findsNothing);
   });
 
-  testWidgets('verified but no linked account → not-ready linkage message', (tester) async {
-    final repo = FakeBeneficiaryRepository()..profile = fakeBeneficiaryProfile(status: 'verified');
+  testWidgets('an invited profile shows accept guidance, not the submit form', (tester) async {
+    final repo = FakeBeneficiaryRepository()..profile = fakeBeneficiaryProfile(status: 'invited');
     await _pump(tester, repo: repo);
-    expect(find.text('Not ready for payout yet'), findsOneWidget);
-    expect(find.textContaining('link your payout account'), findsOneWidget);
+    expect(find.textContaining('Accept the invitation above'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Update my details'), findsNothing);
   });
 
   testWidgets('error + retry', (tester) async {
@@ -112,23 +114,6 @@ void main() {
 
     expect(repo.calls, contains('submitProfile:Amina Ali'));
     expect(find.text('Details submitted for verification.'), findsOneWidget);
-  });
-
-  testWidgets('add payout account flow', (tester) async {
-    final repo = FakeBeneficiaryRepository()..profile = fakeBeneficiaryProfile(status: 'pending');
-    await _pump(tester, repo: repo);
-
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Add payout account'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Provider name'), 'EVC Plus');
-    await tester.enterText(find.widgetWithText(TextField, 'Account number'), '0612345678');
-    await tester.pumpAndSettle();
-    repo.payoutAccounts = [fakePayoutAccount(providerName: 'EVC Plus')];
-    await tester.tap(find.widgetWithText(FilledButton, 'Add payout account'));
-    await tester.pumpAndSettle();
-
-    expect(repo.calls.any((x) => x.startsWith('createPayout:')), isTrue);
-    expect(find.text('Payout account added.'), findsOneWidget);
   });
 
   testWidgets('a guest is redirected to login', (tester) async {

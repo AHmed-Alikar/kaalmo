@@ -3,9 +3,12 @@ import DashboardLayout from '../../components/DashboardLayout';
 import StatusPill from '../../components/StatusPill';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
+import Pagination from '../../components/Pagination';
 import api from '../../api/client';
 import { useLanguage } from '../../context/LanguageContext';
 import { ADMIN_NAV } from './nav';
+
+const LIMIT = 25;
 
 const STATUSES = ['pending', 'confirmed', 'failed', 'refunded'];
 const STATUS_LABELS_SO = { pending: 'Sugaya', confirmed: 'La xaqiijiyay', failed: 'Fashilmay', refunded: 'Dib loo celiyay' };
@@ -24,6 +27,8 @@ export default function AdminDonations() {
   const { t, language } = useLanguage();
   const [status, setStatus] = useState('confirmed');
   const [donations, setDonations] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
 
@@ -35,16 +40,17 @@ export default function AdminDonations() {
 
   const confirmableDonations = donations.filter((d) => d.status === 'pending' && d.paymentId?.provider === 'manual');
 
-  function load() {
+  function load(p = page) {
     setLoading(true);
     setSelected(new Set());
     api
-      .get('/admin/donations', { params: { status, limit: 100 } })
-      .then(({ data }) => setDonations(data.items))
+      .get('/admin/donations', { params: { status, page: p, limit: LIMIT } })
+      .then(({ data }) => { setDonations(data.items); setTotal(data.total); })
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, [status]);
+  useEffect(() => { setPage(1); load(1); /* eslint-disable-next-line */ }, [status]);
+  useEffect(() => { load(page); /* eslint-disable-next-line */ }, [page]);
 
   function toggleOne(id) {
     setSelected((prev) => {
@@ -70,7 +76,7 @@ export default function AdminDonations() {
       });
       setConfirmTarget(null);
       setReference('');
-      load();
+      load(page);
     } catch (err) {
       setActionError(err.response?.data?.error?.message || t('adminDonations.confirmSingleError'));
     } finally {
@@ -87,7 +93,7 @@ export default function AdminDonations() {
         .map((d) => d.paymentId._id);
       const { data } = await api.post('/admin/payments/confirm-batch', { paymentIds });
       setBatchResult(data);
-      load();
+      load(page);
     } catch (err) {
       setActionError(err.response?.data?.error?.message || t('adminDonations.confirmBatchError'));
     } finally {
@@ -204,6 +210,8 @@ export default function AdminDonations() {
             </table>
           </div>
         )}
+
+        <Pagination page={page} limit={LIMIT} total={total} onPage={setPage} />
       </div>
 
       {confirmTarget === 'batch' && (

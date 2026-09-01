@@ -9,4 +9,7 @@ const router = Router();
 router.get('/me', requireAuth, beneficiaryController.getMyBeneficiaryProfile);
 router.post('/me', requireAuth, validate(submitBeneficiarySchema), beneficiaryController.submitMyBeneficiaryProfile);
 
+router.get('/invites/mine', requireAuth, beneficiaryController.listMyBeneficiaryInvites);
+router.post('/invites/:id/accept', requireAuth, beneficiaryController.acceptBeneficiaryInvite);
+
 export default router;

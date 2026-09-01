@@ -66,6 +66,17 @@ class AuthController extends StateNotifier<AuthState> {
     _setAuthenticated(user);
   }
 
+  /// Sends the organizer-access confirmation email. Never changes state.
+  Future<void> requestOrganizerAccess({String? fullName, String? purpose}) =>
+      _repository.requestOrganizerAccess(fullName: fullName, purpose: purpose);
+
+  /// Submits the emailed code. On success the account now has the `organizer`
+  /// role and fresh tokens — reflect the new user in state immediately.
+  Future<void> confirmOrganizerAccess(String code) async {
+    final user = await _repository.confirmOrganizerAccess(code);
+    _setAuthenticated(user);
+  }
+
   /// `PATCH /users/me`. Throws on failure so the caller can surface it.
   Future<void> updateProfile({String? fullName, String? language, bool? pushEnabled}) async {
     final user = await _repository.updateProfile(

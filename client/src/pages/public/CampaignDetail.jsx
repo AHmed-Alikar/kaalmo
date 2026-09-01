@@ -5,6 +5,7 @@ import ProgressBar from '../../components/ProgressBar';
 import VerificationBadge from '../../components/VerificationBadge';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
+import CampaignComments from '../../components/CampaignComments';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -232,6 +233,8 @@ export default function CampaignDetail() {
               </div>
             )}
           </div>
+
+          <CampaignComments campaignId={campaign._id} />
         </div>
 
         {/* Donation panel — must remain clear, not competing with share/report (Rule 22) */}

@@ -27,6 +27,18 @@ class BeneficiaryRepository {
         await _api.submitProfile(fullName: fullName, idDocumentUrl: idDocumentUrl),
       );
 
+  /// Pending beneficiary invitations for the caller.
+  Future<List<BeneficiaryProfile>> myInvites() async {
+    final list = await _api.myInvites();
+    return list
+        .whereType<Map>()
+        .map((e) => BeneficiaryProfile.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  Future<BeneficiaryProfile> acceptInvite(String id) async =>
+      BeneficiaryProfile.fromJson(await _api.acceptInvite(id));
+
   Future<List<PayoutAccount>> myPayoutAccounts() async {
     final list = await _api.myPayoutAccounts();
     return list
