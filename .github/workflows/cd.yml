@@ -1,0 +1,76 @@
+name: Kaalmo Continuous Deployment (CD)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Deploy Backend Server to Render
+  # -------------------------------------------------------------
+  deploy-render-backend:
+    name: Deploy Backend to Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Webhook
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+  # -------------------------------------------------------------
+  # Job 2: Deploy Frontend Web to Vercel
+  # -------------------------------------------------------------
+  deploy-vercel-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./client
+          vercel-args: '--prod'
+
+  # -------------------------------------------------------------
+  # Job 3: Build Android Release APK Artifact
+  # -------------------------------------------------------------
+  build-android-apk:
+    name: Build Mobile Android APK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Save APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaalmo-android-release-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
