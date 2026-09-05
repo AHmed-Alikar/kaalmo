@@ -1,13 +1,19 @@
+import 'package:flutter/foundation.dart';
+
 import 'app_environment.dart';
 
 /// Resolved, immutable runtime configuration.
 ///
-/// Values come from compile-time `--dart-define`s with safe defaults so the
-/// app runs against a local backend out of the box:
+/// Environment is chosen automatically from the build mode and can be overridden
+/// with compile-time `--dart-define`s:
+///
+/// * `flutter run` (debug/profile)  → `development` → `http://localhost:5000/api/v1`
+/// * `flutter build … --release`    → `production`  → `https://kaalmo-server.onrender.com/api/v1`
 ///
 /// ```
-/// flutter run --dart-define=ENV=staging
-/// flutter run --dart-define=API_BASE_URL=https://api.kaalmo.example/api/v1
+/// flutter run   --dart-define=ENV=staging
+/// flutter build apk --release --dart-define=ENV=staging
+/// flutter run   --dart-define=API_BASE_URL=https://api.kaalmo.example/api/v1
 /// ```
 class AppConfig {
   const AppConfig({
@@ -30,7 +36,9 @@ class AppConfig {
   final Duration connectTimeout;
   final Duration receiveTimeout;
 
-  static const _envName = String.fromEnvironment('ENV', defaultValue: 'development');
+  // Optional overrides. When `ENV` is not passed, the build mode decides:
+  // release → production, debug/profile → development (see AppConfig.resolve).
+  static const _envNameOverride = String.fromEnvironment('ENV');
   static const _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
   static const _webBaseUrlOverride = String.fromEnvironment('WEB_BASE_URL');
 
@@ -44,7 +52,7 @@ class AppConfig {
     // android/app/src/debug/res/xml/network_security_config.xml.
     AppEnvironment.development: 'http://localhost:5000/api/v1',
     AppEnvironment.staging: 'https://staging.kaalmo.example/api/v1',
-    AppEnvironment.production: 'https://api.kaalmo.example/api/v1',
+    AppEnvironment.production: 'https://kaalmo-server.onrender.com/api/v1',
   };
 
   static const _defaultWebBaseUrls = <AppEnvironment, String>{
@@ -54,7 +62,10 @@ class AppConfig {
   };
 
   factory AppConfig.resolve() {
-    final env = AppEnvironment.fromName(_envName);
+    final envName = _envNameOverride.isNotEmpty
+        ? _envNameOverride
+        : (kReleaseMode ? 'production' : 'development');
+    final env = AppEnvironment.fromName(envName);
     return AppConfig(
       environment: env,
       apiBaseUrl: _apiBaseUrlOverride.isNotEmpty ? _apiBaseUrlOverride : _defaultBaseUrls[env]!,

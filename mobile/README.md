@@ -15,3 +15,7 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+C:\Android\Sdk\platform-tools\adb.exe devices
+C:\Android\Sdk\platform-tools\adb.exe reverse tcp:5000 tcp:5000
+C:\Android\Sdk\platform-tools\adb.exe reverse --list
