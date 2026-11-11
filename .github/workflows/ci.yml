@@ -49,6 +49,8 @@ jobs:
       - name: Build Frontend
         working-directory: client
         run: npm run build
+        env:
+          VITE_API_URL: /api/v1
 
       - name: Install Production Backend Dependencies
         working-directory: server
